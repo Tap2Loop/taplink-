@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Loyalty — Cafe Ninetales</title>
+<style>
+  :root{
+    --ink:#141414;
+    --paper:#ffffff;
+    --line:#e4e1da;
+    --muted:#8a8580;
+    --gold:#b6862c;
+    --gold-soft:#f8efdc;
+    --stamp-empty:#f1efe9;
+  }
+
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+    min-height:100vh;
+    display:flex;
+    align-items:flex-start;
+    justify-content:center;
+  }
+
+  .screen{
+    width:100%;
+    max-width:480px;
+    min-height:100vh;
+    background:var(--paper);
+    display:flex;
+    flex-direction:column;
+  }
+
+  .hero{
+    background:var(--ink);
+    color:#fff;
+    padding:38px 28px 30px;
+    text-align:center;
+  }
+  .hero-eyebrow{
+    font-size:11px;
+    letter-spacing:.18em;
+    text-transform:uppercase;
+    color:#bdb9b1;
+    margin-bottom:10px;
+  }
+  .hero-name{
+    font-family:Georgia, 'Times New Roman', serif;
+    font-size:30px;
+    font-weight:700;
+  }
+  .hero-sub{
+    margin-top:6px;
+    font-size:13px;
+    color:#cfcbc2;
+  }
+
+  .body{
+    flex:1;
+    padding:30px 24px 40px;
+    display:flex;
+    flex-direction:column;
+    gap:26px;
+  }
+
+  /* ---------- LOADING ---------- */
+  #loadingState{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:60px 0;
+    color:var(--muted);
+    font-size:14px;
+  }
+
+  /* ---------- PHONE ENTRY ---------- */
+  #phoneState{
+    display:none;
+    flex-direction:column;
+    gap:18px;
+  }
+  .phone-label{ font-size:14px; font-weight:600; }
+  .phone-help{ font-size:13px; color:var(--muted); margin-top:-10px; }
+  .phone-input{
+    width:100%;
+    padding:15px 16px;
+    font-size:17px;
+    border:1.5px solid var(--line);
+    border-radius:10px;
+    background:#fff;
+    color:var(--ink);
+  }
+  .phone-input:focus{ outline:none; border-color:var(--ink); }
+  .btn-primary{
+    width:100%;
+    padding:16px;
+    background:var(--ink);
+    color:#fff;
+    border:none;
+    border-radius:10px;
+    font-size:15px;
+    font-weight:600;
+    cursor:pointer;
+  }
+  .btn-primary:active{ opacity:.85; }
+  .btn-primary:disabled{ opacity:.5; cursor:not-allowed; }
+  .remember-note{ font-size:12px; color:var(--muted); text-align:center; line-height:1.5; }
+
+  /* ---------- CARD STATE ---------- */
+  #cardState{ display:none; flex-direction:column; gap:24px; }
+
+  .greet-row{ display:flex; align-items:baseline; justify-content:space-between; }
+  .greet{ font-size:15px; color:var(--muted); }
+  .greet strong{ color:var(--ink); font-weight:600; }
+  .switch-number{
+    font-size:12px; color:var(--muted); text-decoration:underline;
+    cursor:pointer; background:none; border:none; padding:0;
+  }
+
+  .status-banner{
+    border:1.5px solid var(--line);
+    border-radius:12px;
+    padding:16px 18px;
+    text-align:center;
+  }
+  .status-banner.unlocked{ border-color:var(--gold); background:var(--gold-soft); }
+  .status-line{ font-size:13px; color:var(--muted); }
+  .status-banner.unlocked .status-line{ color:#8a6315; }
+  .status-reward{
+    margin-top:4px;
+    font-family:Georgia, serif;
+    font-size:20px;
+    font-weight:700;
+  }
+  .status-banner.unlocked .status-reward{ color:#7a5414; }
+
+  .card-frame{ border:1.5px solid var(--line); border-radius:14px; padding:22px 18px; }
+  .card-title{
+    font-size:12px; letter-spacing:.14em; text-transform:uppercase;
+    color:var(--muted); margin-bottom:16px; text-align:center;
+  }
+  .stamp-grid{ display:grid; grid-template-columns:repeat(5, 1fr); gap:14px; }
+  .stamp{
+    aspect-ratio:1; border-radius:50%;
+    display:flex; align-items:center; justify-content:center; flex-direction:column;
+    border:1.5px solid var(--line); background:var(--stamp-empty); position:relative;
+  }
+  .stamp .num{
+    font-size:10px; color:var(--muted); position:absolute; top:-7px; left:50%;
+    transform:translateX(-50%); background:#fff; padding:0 4px;
+  }
+  .stamp.filled{ background:var(--ink); border-color:var(--ink); }
+  .stamp.filled::after{
+    content:""; width:9px; height:9px;
+    border-left:2px solid #fff; border-bottom:2px solid #fff;
+    transform:rotate(-45deg) translate(1px,-1px);
+  }
+  .stamp.reward{ background:#fff; border:1.5px dashed var(--gold); }
+  .stamp.reward .reward-label{
+    font-size:8px; line-height:1.15; text-align:center; color:var(--gold);
+    font-weight:700; padding:0 3px;
+  }
+  .stamp.reward.filled{ background:var(--gold); border-style:solid; border-color:var(--gold); }
+  .stamp.reward.filled .reward-label{ color:#fff; }
+  .stamp.reward.filled::after{ display:none; }
+
+  .legend{ margin-top:16px; font-size:11.5px; color:var(--muted); text-align:center; line-height:1.5; }
+
+  /* ---------- STAFF ZONE ---------- */
+  .staff-zone{
+    border-top:1.5px dashed var(--line);
+    padding-top:22px;
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+  }
+  .staff-label{
+    font-size:11px; letter-spacing:.12em; text-transform:uppercase;
+    color:var(--muted); text-align:center;
+  }
+  .btn-staff{
+    width:100%; padding:16px; background:#fff; color:var(--ink);
+    border:1.5px solid var(--ink); border-radius:10px;
+    font-size:15px; font-weight:600; cursor:pointer;
+  }
+  .btn-staff:active{ background:var(--ink); color:#fff; }
+  .btn-staff:disabled{ opacity:.4; cursor:not-allowed; }
+  .staff-hint{ font-size:12px; color:var(--muted); text-align:center; }
+
+  .footer{
+    text-align:center; font-size:11px; color:var(--muted);
+    letter-spacing:.06em; padding:18px 0 6px;
+  }
+
+  .toast{
+    position:fixed; bottom:24px; left:50%;
+    transform:translateX(-50%) translateY(20px);
+    background:var(--ink); color:#fff;
+    padding:12px 20px; border-radius:30px; font-size:13px;
+    opacity:0; transition:opacity .25s, transform .25s;
+    pointer-events:none; white-space:nowrap; max-width:90%;
+  }
+  .toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
+
+  /* ---------- PIN MODAL ---------- */
+  .modal-overlay{
+    display:none;
+    position:fixed; inset:0;
+    background:rgba(20,20,20,.55);
+    align-items:center; justify-content:center;
+    z-index:50;
+    padding:20px;
+  }
+  .modal-overlay.show{ display:flex; }
+  .modal{
+    background:#fff;
+    border-radius:16px;
+    padding:28px 24px;
+    width:100%;
+    max-width:340px;
+    text-align:center;
+  }
+  .modal h3{ margin:0 0 6px; font-size:17px; }
+  .modal p{ margin:0 0 18px; font-size:13px; color:var(--muted); }
+  .pin-input{
+    width:100%;
+    padding:14px;
+    font-size:22px;
+    text-align:center;
+    letter-spacing:.4em;
+    border:1.5px solid var(--line);
+    border-radius:10px;
+    margin-bottom:14px;
+  }
+  .pin-input:focus{ outline:none; border-color:var(--ink); }
+  .modal-actions{ display:flex; gap:10px; }
+  .modal-actions button{
+    flex:1; padding:13px; border-radius:10px;
+    font-size:14px; font-weight:600; cursor:pointer;
+  }
+  .btn-cancel{ background:#fff; border:1.5px solid var(--line); color:var(--muted); }
+  .btn-confirm{ background:var(--ink); border:none; color:#fff; }
+</style>
+</head>
+<body>
+
+<div class="screen">
+
+  <div class="hero">
+    <div class="hero-eyebrow">Loyalty Card</div>
+    <div class="hero-name" id="cafeName">Loading...</div>
+    <div class="hero-sub">Multi-cuisine cafe &amp; restaurant · Pune</div>
+  </div>
+
+  <div class="body">
+
+    <div id="loadingState">Loading your card...</div>
+
+    <div id="phoneState">
+      <div>
+        <div class="phone-label">Enter your phone number</div>
+        <div class="phone-help">We use this to track your visits — no app, no password.</div>
+      </div>
+      <input type="tel" id="phoneInput" class="phone-input" placeholder="10-digit mobile number" maxlength="10" inputmode="numeric">
+      <button class="btn-primary" id="submitPhoneBtn" onclick="submitPhone()">Show my card</button>
+      <div class="remember-note">Your number is remembered on this phone, so you won't need to type it again next visit.</div>
+    </div>
+
+    <div id="cardState">
+      <div class="greet-row">
+        <div class="greet">Welcome back, <strong id="greetNumber"></strong></div>
+        <button class="switch-number" onclick="resetNumber()">Not you?</button>
+      </div>
+
+      <div id="statusBanner" class="status-banner">
+        <div class="status-line" id="statusLine"></div>
+        <div class="status-reward" id="statusReward"></div>
+      </div>
+
+      <div class="card-frame">
+        <div class="card-title">Your Punch Card</div>
+        <div class="stamp-grid" id="stampGrid"></div>
+        <div class="legend">Gold slots unlock a reward · Dark slots are confirmed visits</div>
+      </div>
+
+      <div class="staff-zone">
+        <div class="staff-label">For Staff Only</div>
+        <button class="btn-staff" id="confirmBtn" onclick="openPinModal()">Confirm Visit</button>
+        <div class="staff-hint">Tap only after the bill is settled at the counter.</div>
+      </div>
+    </div>
+
+    <div class="footer">Powered by TapReview</div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="pinOverlay">
+  <div class="modal">
+    <h3>Staff PIN</h3>
+    <p>Enter the 4-digit staff PIN to confirm this visit.</p>
+    <input type="password" id="pinInput" class="pin-input" maxlength="4" inputmode="numeric" placeholder="••••">
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closePinModal()">Cancel</button>
+      <button class="btn-confirm" id="pinSubmitBtn" onclick="submitPin()">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+  // ===== CONFIG — your project's keys =====
+  const SUPABASE_URL = "https://gszhclrdisokzikewgbm.supabase.co";
+  const SUPABASE_KEY = "sb_publishable_pqFSFM54tlzNVji4DSlE4w_L9DJNq2h";
+  const CAFE_ID = "ninetales"; // change this per cafe when you reuse this file
+
+  const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  const STORAGE_KEY = "loyalty_phone_" + CAFE_ID;
+
+  let cafeData = null;     // { id, name, total_slots, reward_config }
+  let currentPhone = null;
+  let currentVisits = 0;
+
+  function showToast(msg){
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(()=> t.classList.remove('show'), 2400);
+  }
+
+  function maskPhone(phone){
+    return "+91 " + phone.slice(0,5) + " " + phone.slice(5);
+  }
+
+  // ----- Load cafe config (name, rewards) -----
+  async function loadCafe(){
+    const { data, error } = await supabase
+      .from('cafes')
+      .select('id, name, total_slots, reward_config')
+      .eq('id', CAFE_ID)
+      .single();
+
+    if(error || !data){
+      document.getElementById('cafeName').textContent = "Cafe not found";
+      document.getElementById('loadingState').textContent = "Could not load this loyalty card. Please contact the cafe.";
+      return false;
+    }
+
+    cafeData = data;
+    document.getElementById('cafeName').textContent = data.name;
+    return true;
+  }
+
+  // ----- Phone submit -----
+  async function submitPhone(){
+    const input = document.getElementById('phoneInput');
+    const phone = input.value.trim();
+    if(phone.length !== 10 || !/^\d{10}$/.test(phone)){
+      showToast("Enter a valid 10-digit number");
+      return;
+    }
+    const btn = document.getElementById('submitPhoneBtn');
+    btn.disabled = true;
+    btn.textContent = "Loading...";
+
+    localStorage.setItem(STORAGE_KEY, phone);
+    await loadCard(phone);
+
+    btn.disabled = false;
+    btn.textContent = "Show my card";
+  }
+
+  function resetNumber(){
+    localStorage.removeItem(STORAGE_KEY);
+    document.getElementById('cardState').style.display = 'none';
+    document.getElementById('phoneState').style.display = 'flex';
+    document.getElementById('phoneInput').value = '';
+  }
+
+  // ----- Fetch (or create-on-view) customer record -----
+  async function fetchVisits(phone){
+    const { data, error } = await supabase
+      .from('loyalty_customers')
+      .select('visit_count')
+      .eq('cafe_id', CAFE_ID)
+      .eq('phone', phone)
+      .maybeSingle();
+
+    if(error){
+      console.error(error);
+      return 0;
+    }
+    if(!data) return 0; // not created yet — will be created on first confirm_visit call
+    return data.visit_count;
+  }
+
+  function renderCard(){
+    const REWARDS = cafeData.reward_config;
+    const TOTAL_SLOTS = cafeData.total_slots;
+    const visits = currentVisits;
+
+    document.getElementById('greetNumber').textContent = maskPhone(currentPhone);
+
+    const grid = document.getElementById('stampGrid');
+    grid.innerHTML = '';
+    for(let i=1; i<=TOTAL_SLOTS; i++){
+      const isReward = !!REWARDS[String(i)];
+      const isFilled = i <= visits;
+      const cell = document.createElement('div');
+      cell.className = 'stamp' + (isReward ? ' reward' : '') + (isFilled ? ' filled' : '');
+      const num = document.createElement('div');
+      num.className = 'num';
+      num.textContent = i;
+      cell.appendChild(num);
+      if(isReward){
+        const label = document.createElement('div');
+        label.className = 'reward-label';
+        label.textContent = REWARDS[String(i)];
+        cell.appendChild(label);
+      }
+      grid.appendChild(cell);
+    }
+
+    const banner = document.getElementById('statusBanner');
+    const line = document.getElementById('statusLine');
+    const rewardEl = document.getElementById('statusReward');
+    const confirmBtn = document.getElementById('confirmBtn');
+
+    banner.classList.remove('unlocked');
+
+    if(visits >= TOTAL_SLOTS){
+      banner.classList.add('unlocked');
+      line.textContent = "Card Completed";
+      rewardEl.textContent = "🎉 " + REWARDS[String(TOTAL_SLOTS)] + " — fully redeemed";
+      confirmBtn.disabled = true;
+      confirmBtn.textContent = "Card Completed";
+    } else if(REWARDS[String(visits)]){
+      banner.classList.add('unlocked');
+      line.textContent = "Visit " + visits + " of " + TOTAL_SLOTS;
+      rewardEl.textContent = "🎉 " + REWARDS[String(visits)] + " unlocked — show this to staff";
+      confirmBtn.disabled = false;
+      confirmBtn.textContent = "Confirm Visit";
+    } else {
+      line.textContent = "Visit " + visits + " of " + TOTAL_SLOTS;
+      const rewardSlots = Object.keys(REWARDS).map(Number).sort((a,b)=>a-b);
+      const nextSlot = rewardSlots.find(s => s > visits);
+      const remaining = nextSlot - visits;
+      rewardEl.textContent = remaining + " more visit" + (remaining>1?"s":"") + " to " + REWARDS[String(nextSlot)];
+      confirmBtn.disabled = false;
+      confirmBtn.textContent = "Confirm Visit";
+    }
+  }
+
+  async function loadCard(phone){
+    currentPhone = phone;
+    document.getElementById('phoneState').style.display = 'none';
+    document.getElementById('loadingState').style.display = 'flex';
+    document.getElementById('cardState').style.display = 'none';
+
+    currentVisits = await fetchVisits(phone);
+
+    document.getElementById('loadingState').style.display = 'none';
+    document.getElementById('cardState').style.display = 'flex';
+    renderCard();
+  }
+
+  // ----- PIN modal -----
+  function openPinModal(){
+    document.getElementById('pinOverlay').classList.add('show');
+    document.getElementById('pinInput').value = '';
+    document.getElementById('pinInput').focus();
+  }
+  function closePinModal(){
+    document.getElementById('pinOverlay').classList.remove('show');
+  }
+
+  async function submitPin(){
+    const pin = document.getElementById('pinInput').value.trim();
+    if(pin.length !== 4){
+      showToast("Enter the 4-digit PIN");
+      return;
+    }
+
+    const btn = document.getElementById('pinSubmitBtn');
+    btn.disabled = true;
+    btn.textContent = "Checking...";
+
+    const { data, error } = await supabase.rpc('confirm_visit', {
+      p_cafe_id: CAFE_ID,
+      p_phone: currentPhone,
+      p_pin: pin
+    });
+
+    btn.disabled = false;
+    btn.textContent = "Confirm";
+
+    if(error){
+      showToast("Something went wrong. Try again.");
+      console.error(error);
+      return;
+    }
+
+    if(!data.success){
+      showToast(data.error === 'Incorrect PIN' ? "Incorrect PIN" : data.error);
+      return;
+    }
+
+    closePinModal();
+    currentVisits = data.new_count;
+    renderCard();
+
+    const REWARDS = cafeData.reward_config;
+    if(REWARDS[String(currentVisits)]){
+      showToast("Reward unlocked: " + REWARDS[String(currentVisits)]);
+    } else {
+      showToast("Visit confirmed — " + currentVisits + " of " + cafeData.total_slots);
+    }
+  }
+
+  document.getElementById('pinInput')?.addEventListener('keydown', (e) => {
+    if(e.key === 'Enter') submitPin();
+  });
+
+  // ----- Boot -----
+  window.addEventListener('DOMContentLoaded', async () => {
+    const ok = await loadCafe();
+    if(!ok) return;
+
+    document.getElementById('loadingState').style.display = 'none';
+
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if(saved){
+      await loadCard(saved);
+    } else {
+      document.getElementById('phoneState').style.display = 'flex';
+    }
+  });
+</script>
+
+</body>
+</html>
