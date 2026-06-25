@@ -320,7 +320,7 @@
   const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdzemhjbHJkaXNva3ppa2V3Z2JtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyOTA5MDUsImV4cCI6MjA5Nzg2NjkwNX0.37t3LSM9At1q-nhiijb7Qh5U6C3gV1XUDe_OhIUYKhw";
   const CAFE_ID = "ninetales"; // change this per cafe when you reuse this file
 
-  const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
   const STORAGE_KEY = "loyalty_phone_" + CAFE_ID;
 
@@ -341,7 +341,7 @@
 
   // ----- Load cafe config (name, rewards) -----
   async function loadCafe(){
-    const { data, error } = await supabase
+    const { data, error } = await db
       .from('cafes')
       .select('id, name, total_slots, reward_config')
       .eq('id', CAFE_ID)
@@ -386,7 +386,7 @@
 
   // ----- Fetch (or create-on-view) customer record -----
   async function fetchVisits(phone){
-    const { data, error } = await supabase
+    const { data, error } = await db
       .from('loyalty_customers')
       .select('visit_count')
       .eq('cafe_id', CAFE_ID)
@@ -492,7 +492,7 @@
     btn.disabled = true;
     btn.textContent = "Checking...";
 
-    const { data, error } = await supabase.rpc('confirm_visit', {
+    const { data, error } = await db.rpc('confirm_visit', {
       p_cafe_id: CAFE_ID,
       p_phone: currentPhone,
       p_pin: pin
