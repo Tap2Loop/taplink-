@@ -6,7 +6,7 @@
 <title>Loyalty — RAHI Cà-phê Vietnam</title>
 <style>
   :root{
-    --ink:#141414;
+    --ink:#1a3a2a;
     --paper:#ffffff;
     --line:#e4e1da;
     --muted:#8a8580;
@@ -46,18 +46,19 @@
     font-size:11px;
     letter-spacing:.18em;
     text-transform:uppercase;
-    color:#bdb9b1;
+    color:#a0c0b0;
     margin-bottom:10px;
   }
   .hero-name{
     font-family:Georgia, 'Times New Roman', serif;
-    font-size:30px;
+    font-size:28px;
     font-weight:700;
+    line-height:1.2;
   }
   .hero-sub{
     margin-top:6px;
     font-size:13px;
-    color:#cfcbc2;
+    color:#a0c0b0;
   }
 
   .body{
@@ -68,7 +69,6 @@
     gap:26px;
   }
 
-  /* ---------- LOADING ---------- */
   #loadingState{
     display:flex;
     align-items:center;
@@ -78,7 +78,6 @@
     font-size:14px;
   }
 
-  /* ---------- PHONE ENTRY ---------- */
   #phoneState{
     display:none;
     flex-direction:column;
@@ -111,7 +110,6 @@
   .btn-primary:disabled{ opacity:.5; cursor:not-allowed; }
   .remember-note{ font-size:12px; color:var(--muted); text-align:center; line-height:1.5; }
 
-  /* ---------- CARD STATE ---------- */
   #cardState{ display:none; flex-direction:column; gap:24px; }
 
   .greet-row{ display:flex; align-items:baseline; justify-content:space-between; }
@@ -171,7 +169,6 @@
 
   .legend{ margin-top:16px; font-size:11.5px; color:var(--muted); text-align:center; line-height:1.5; }
 
-  /* ---------- STAFF ZONE ---------- */
   .staff-zone{
     border-top:1.5px dashed var(--line);
     padding-top:22px;
@@ -207,7 +204,6 @@
   }
   .toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
 
-  /* ---------- PIN MODAL ---------- */
   .modal-overlay{
     display:none;
     position:fixed; inset:0;
@@ -225,7 +221,7 @@
     max-width:340px;
     text-align:center;
   }
-  .modal h3{ margin:0 0 6px; font-size:17px; }
+  .modal h3{ margin:0 0 6px; font-size:17px; color:var(--ink); }
   .modal p{ margin:0 0 18px; font-size:13px; color:var(--muted); }
   .pin-input{
     width:100%;
@@ -250,7 +246,6 @@
 <body>
 
 <div class="screen">
-
   <div class="hero">
     <div class="hero-eyebrow">Loyalty Card</div>
     <div class="hero-name" id="cafeName">Loading...</div>
@@ -315,16 +310,14 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-  // ===== CONFIG — your project's keys =====
   const SUPABASE_URL = "https://gszhclrdisokzikewgbm.supabase.co";
   const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdzemhjbHJkaXNva3ppa2V3Z2JtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyOTA5MDUsImV4cCI6MjA5Nzg2NjkwNX0.37t3LSM9At1q-nhiijb7Qh5U6C3gV1XUDe_OhIUYKhw";
   const CAFE_ID = "rahi";
+  const STORAGE_KEY = "loyalty_phone_" + CAFE_ID;
 
   const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-  const STORAGE_KEY = "loyalty_phone_" + CAFE_ID;
-
-  let cafeData = null;     // { id, name, total_slots, reward_config }
+  let cafeData = null;
   let currentPhone = null;
   let currentVisits = 0;
 
@@ -339,7 +332,6 @@
     return "+91 " + phone.slice(0,5) + " " + phone.slice(5);
   }
 
-  // ----- Load cafe config (name, rewards) -----
   async function loadCafe(){
     const { data, error } = await db
       .from('cafes')
@@ -348,7 +340,7 @@
       .single();
 
     if(error || !data){
-      document.getElementById('cafeName').textContent = "Cafe not found";
+      document.getElementById('cafeName').textContent = "RAHI Cà-phê Vietnam";
       document.getElementById('loadingState').textContent = "Could not load this loyalty card. Please contact the cafe.";
       return false;
     }
@@ -358,7 +350,6 @@
     return true;
   }
 
-  // ----- Phone submit -----
   async function submitPhone(){
     const input = document.getElementById('phoneInput');
     const phone = input.value.trim();
@@ -369,10 +360,8 @@
     const btn = document.getElementById('submitPhoneBtn');
     btn.disabled = true;
     btn.textContent = "Loading...";
-
     localStorage.setItem(STORAGE_KEY, phone);
     await loadCard(phone);
-
     btn.disabled = false;
     btn.textContent = "Show my card";
   }
@@ -384,7 +373,6 @@
     document.getElementById('phoneInput').value = '';
   }
 
-  // ----- Fetch (or create-on-view) customer record -----
   async function fetchVisits(phone){
     const { data, error } = await db
       .from('loyalty_customers')
@@ -393,11 +381,7 @@
       .eq('phone', phone)
       .maybeSingle();
 
-    if(error){
-      console.error(error);
-      return 0;
-    }
-    if(!data) return 0; // not created yet — will be created on first confirm_visit call
+    if(error || !data) return 0;
     return data.visit_count;
   }
 
@@ -432,7 +416,6 @@
     const line = document.getElementById('statusLine');
     const rewardEl = document.getElementById('statusReward');
     const confirmBtn = document.getElementById('confirmBtn');
-
     banner.classList.remove('unlocked');
 
     if(visits >= TOTAL_SLOTS){
@@ -463,15 +446,12 @@
     document.getElementById('phoneState').style.display = 'none';
     document.getElementById('loadingState').style.display = 'flex';
     document.getElementById('cardState').style.display = 'none';
-
     currentVisits = await fetchVisits(phone);
-
     document.getElementById('loadingState').style.display = 'none';
     document.getElementById('cardState').style.display = 'flex';
     renderCard();
   }
 
-  // ----- PIN modal -----
   function openPinModal(){
     document.getElementById('pinOverlay').classList.add('show');
     document.getElementById('pinInput').value = '';
@@ -492,19 +472,23 @@
     btn.disabled = true;
     btn.textContent = "Checking...";
 
-    const res = await fetch(`${SUPABASE_URL}/functions/v1/confirm-visit`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "apikey": SUPABASE_KEY },
-      body: JSON.stringify({ cafe_id: CAFE_ID, phone: currentPhone, pin })
+    const { data, error } = await db.rpc('confirm_visit', {
+      p_cafe_id: CAFE_ID,
+      p_phone: currentPhone,
+      p_pin: pin
     });
-
-    const data = await res.json();
 
     btn.disabled = false;
     btn.textContent = "Confirm";
 
+    if(error){
+      showToast("Something went wrong. Try again.");
+      console.error(error);
+      return;
+    }
+
     if(!data.success){
-      showToast(data.error === 'Incorrect PIN' ? "Incorrect PIN" : "Something went wrong. Try again.");
+      showToast(data.error === 'Incorrect PIN' ? "Incorrect PIN" : data.error);
       return;
     }
 
@@ -524,13 +508,10 @@
     if(e.key === 'Enter') submitPin();
   });
 
-  // ----- Boot -----
   window.addEventListener('DOMContentLoaded', async () => {
     const ok = await loadCafe();
     if(!ok) return;
-
     document.getElementById('loadingState').style.display = 'none';
-
     const saved = localStorage.getItem(STORAGE_KEY);
     if(saved){
       await loadCard(saved);
@@ -542,5 +523,3 @@
 
 </body>
 </html>
-
-
