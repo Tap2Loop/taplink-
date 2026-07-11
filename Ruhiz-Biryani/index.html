@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+  <title>Rate your visit — Ruhiz Biryani</title>
+  <meta name="description" content="Enjoyed your meal? Leave a quick Google review for Ruhiz Biryani." />
+  <meta name="robots" content="noindex, nofollow" />
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --black:  #111111;
+      --white:  #ffffff;
+      --off:    #f7f6f4;
+      --border: #e4e2de;
+      --muted:  #888580;
+      --gold:   #c9951a;
+      --radius: 14px;
+      --font:   -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    }
+
+    html, body {
+      height: 100%;
+      background: var(--off);
+      font-family: var(--font);
+      color: var(--black);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .page {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 0 0 40px;
+    }
+
+    /* Hero */
+    .hero {
+      width: 100%;
+      background: var(--black);
+      padding: 36px 24px 28px;
+      text-align: center;
+    }
+    .hero-stars { font-size: 24px; letter-spacing: 4px; color: var(--gold); margin-bottom: 14px; }
+    .hero-name  { font-size: 22px; font-weight: 600; color: var(--white); margin-bottom: 5px; }
+    .hero-sub   { font-size: 13px; color: #777; }
+
+    /* Body */
+    .body {
+      width: 100%;
+      max-width: 420px;
+      padding: 24px 16px 0;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .prompt {
+      font-size: 14px;
+      color: var(--muted);
+      text-align: center;
+      line-height: 1.6;
+      padding: 0 8px;
+    }
+
+    .reviews-label, .own-label {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      color: var(--muted);
+      padding-left: 2px;
+    }
+
+    /* Review cards */
+    .review-card {
+      background: var(--white);
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius);
+      padding: 14px 44px 14px 14px;
+      cursor: pointer;
+      position: relative;
+      transition: border-color .15s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .review-card:active { background: #fafaf8; }
+    .review-card.selected { border-color: var(--black); }
+    .review-card p { font-size: 14px; line-height: 1.65; color: #333; }
+
+    .rdot {
+      position: absolute;
+      top: 14px; right: 14px;
+      width: 20px; height: 20px;
+      border-radius: 50%;
+      border: 1.5px solid var(--border);
+      transition: border-color .15s, background .15s;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .review-card.selected .rdot { border-color: var(--black); background: var(--black); }
+    .rdot::after {
+      content: '';
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--white);
+      opacity: 0;
+      transition: opacity .15s;
+    }
+    .review-card.selected .rdot::after { opacity: 1; }
+
+    /* Own review */
+    .own-wrap {
+      background: var(--white);
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      transition: border-color .15s;
+    }
+    .own-wrap:focus-within { border-color: var(--black); }
+    .own-textarea {
+      width: 100%;
+      min-height: 96px;
+      border: none; outline: none; resize: none;
+      font-family: var(--font);
+      font-size: 14px; line-height: 1.65;
+      color: #333; background: transparent;
+      padding: 14px;
+    }
+    .own-textarea::placeholder { color: #bbb; }
+    .own-char { font-size: 11px; color: var(--muted); padding: 0 14px 10px; text-align: right; }
+
+    /* Divider */
+    .divider { display: flex; align-items: center; gap: 10px; }
+    .divider-line { flex: 1; height: 0.5px; background: var(--border); }
+    .divider-text { font-size: 12px; color: #bbb; white-space: nowrap; }
+
+    /* Buttons */
+    .btn-copy {
+      width: 100%; padding: 13px;
+      border-radius: var(--radius);
+      border: 1.5px solid var(--border);
+      background: var(--white);
+      font-family: var(--font);
+      font-size: 14px; color: #444;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center; gap: 7px;
+      transition: background .15s, border-color .15s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .btn-copy:active { background: #f5f4f2; }
+    .btn-copy.copied { border-color: #1a7a3c; color: #1a7a3c; }
+
+    .btn-google {
+      width: 100%; padding: 15px;
+      border-radius: var(--radius);
+      border: none;
+      background: var(--black);
+      font-family: var(--font);
+      font-size: 15px; font-weight: 600;
+      color: var(--white);
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center; gap: 9px;
+      transition: opacity .15s;
+      -webkit-tap-highlight-color: transparent;
+      text-decoration: none;
+    }
+    .btn-google:active { opacity: .85; }
+    .g-svg { width: 18px; height: 18px; flex-shrink: 0; }
+
+    /* Toast */
+    .toast {
+      position: fixed;
+      bottom: 32px; left: 50%;
+      transform: translateX(-50%) translateY(12px);
+      background: #1a1a1a; color: #fff;
+      font-size: 13px; padding: 10px 20px;
+      border-radius: 24px;
+      white-space: nowrap;
+      opacity: 0;
+      transition: opacity .2s, transform .2s;
+      pointer-events: none;
+      z-index: 100;
+    }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    .footer {
+      margin-top: 10px;
+      font-size: 11px; color: #ccc;
+      text-align: center; padding: 0 16px;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { transition: none !important; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="page">
+
+  <div class="hero">
+    <div class="hero-stars">★★★★★</div>
+    <div class="hero-name">Ruhiz Biryani</div>
+    <div class="hero-sub">Biryani Resteraunt &nbsp;·&nbsp; Mahalunge,Pune</div>
+  </div>
+
+  <div class="body">
+
+    <p class="prompt">Glad you enjoyed your visit.<br>Pick a review or write your own — takes 10 seconds.</p>
+
+    <span class="reviews-label">Choose a review</span>
+
+    <div class="review-card selected" id="card-1" onclick="selectCard(1)" role="radio" aria-checked="true" tabindex="0">
+      <div class="rdot"></div>
+      <p id="review-text-1"></p>
+    </div>
+
+    <div class="review-card" id="card-2" onclick="selectCard(2)" role="radio" aria-checked="false" tabindex="0">
+      <div class="rdot"></div>
+      <p id="review-text-2"></p>
+    </div>
+
+    <div class="divider">
+      <div class="divider-line"></div>
+      <span class="divider-text">or write your own</span>
+      <div class="divider-line"></div>
+    </div>
+
+    <span class="own-label">Write your own</span>
+    <div class="own-wrap">
+      <textarea
+        class="own-textarea"
+        id="own-review"
+        placeholder="What did you love about your visit?"
+        maxlength="500"
+        oninput="onOwnInput(this)"
+        aria-label="Write your own review"
+      ></textarea>
+      <div class="own-char" id="char-count">0 / 500</div>
+    </div>
+
+    <button class="btn-copy" id="copy-btn" onclick="copyReview()" aria-label="Copy review text">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <rect x="9" y="9" width="13" height="13" rx="2"/>
+        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+      </svg>
+      <span id="copy-label">Copy review</span>
+    </button>
+
+    <a
+      class="btn-google"
+      href="https://www.google.com/search?rlz=1C5MACD_enIN1116IN1116&sca_esv=7f14407af024e43f&sxsrf=APpeQnvR9zS7wfXx21GhBDoecbF3JVFlBw:1783755821347&si=APenkKm7iecQ4G6P-TsbSMFKIQtv3EFIqRAFw-i8uEbk55Z-_8SuDqOuM-QmRmxmmM7Ct3Xtt5SB-97D_ksXHnRWG5xbjruObEPPs9JMO69eKBcUTa9PtN5fc-ZfN4p_Fjo7mSgcfPgM0ylL3Fud7NJtiRNt365b3Q%3D%3D&q=Ruhiz+Biryani+Mahalunge+Reviews&sa=X&ved=2ahUKEwi8qeOgkMqVAxXvUGcHHRIGCcsQ0bkNegQILBAF&biw=1470&bih=801&dpr=2#lrd=0x3bc2bb1bb8078a3f:0xeb6acee594475889,3,,,,"
+      target="_blank"
+      rel="noopener"
+      aria-label="Open Google Reviews for Ruhiz Biryani"
+    >
+      <svg class="g-svg" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57C21.36 18.01 22.56 15.36 22.56 12.25z" fill="#4285F4"/>
+        <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+        <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/>
+        <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+      </svg>
+      Open Google Reviews
+    </a>
+
+    <p class="footer">Powered by Tap2Loop &nbsp;·&nbsp; takes 10 seconds</p>
+
+  </div>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+  /* ── Review pool — 6 options, 2 shown randomly each load ── */
+  const ALL_REVIEWS = [
+    "Cosy spot with a great menu — the food was excellent and the staff were warm and attentive. Definitely coming back!",
+    "Love the vibe here — perfect place to catch up with friends. Food was fresh, portions were good, and the service was quick.",
+    "Best biryani which I ever had here at Mahalunge, Must come spot for biryani lovers!",
+    "Great find in Hinjewadi — the food is well-priced for the quality you get. Had a lovely time and the staff were super friendly.",
+    "Really enjoyed our visit to Cafe Ninetales. The multi-cuisine menu means there's something for everyone. Will be bringing friends next time.",
+    "Chill atmosphere, good food, great service — exactly what you want from a cafe. Easily one of my go-to spots in Pune now."
+  ];
+
+  /* Pick 2 unique random reviews */
+  function pickTwo(arr) {
+    const shuffled = [...arr].sort(() => Math.random() - 0.5);
+    return [shuffled[0], shuffled[1]];
+  }
+
+  const [review1, review2] = pickTwo(ALL_REVIEWS);
+  document.getElementById('review-text-1').textContent = review1;
+  document.getElementById('review-text-2').textContent = review2;
+
+  /* Active reviews map for copy */
+  const activeReviews = { 1: review1, 2: review2 };
+
+  /* ── State ── */
+  let selectedCard = 1;
+
+  /* ── Select card ── */
+  function selectCard(n) {
+    selectedCard = n;
+    document.getElementById('own-review').value = '';
+    document.getElementById('char-count').textContent = '0 / 500';
+    [1, 2].forEach(i => {
+      const el = document.getElementById('card-' + i);
+      el.classList.toggle('selected', i === n);
+      el.setAttribute('aria-checked', i === n);
+    });
+  }
+
+  /* ── Own review input ── */
+  function onOwnInput(el) {
+    const len = el.value.length;
+    document.getElementById('char-count').textContent = len + ' / 500';
+    if (len > 0) {
+      selectedCard = 0;
+      [1, 2].forEach(i => {
+        document.getElementById('card-' + i).classList.remove('selected');
+        document.getElementById('card-' + i).setAttribute('aria-checked', 'false');
+      });
+    } else {
+      selectCard(1);
+    }
+  }
+
+  /* ── Get active text ── */
+  function getActiveReview() {
+    const own = document.getElementById('own-review').value.trim();
+    if (own.length > 0) return own;
+    return activeReviews[selectedCard] || activeReviews[1];
+  }
+
+  /* ── Copy ── */
+  function copyReview() {
+    const text = getActiveReview();
+    const btn = document.getElementById('copy-btn');
+    const label = document.getElementById('copy-label');
+
+    const finish = () => {
+      btn.classList.add('copied');
+      label.textContent = 'Copied!';
+      showToast('Copied — now tap Open Google Reviews and paste');
+      setTimeout(() => { btn.classList.remove('copied'); label.textContent = 'Copy review'; }, 3000);
+    };
+
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(text).then(finish).catch(() => fallbackCopy(text, finish));
+    } else {
+      fallbackCopy(text, finish);
+    }
+  }
+
+  function fallbackCopy(text, cb) {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.cssText = 'position:fixed;opacity:0;top:0;left:0';
+    document.body.appendChild(ta);
+    ta.focus(); ta.select();
+    try { document.execCommand('copy'); } catch(e) {}
+    document.body.removeChild(ta);
+    cb();
+  }
+
+  /* ── Toast ── */
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 3000);
+  }
+
+  /* ── Keyboard support ── */
+  document.querySelectorAll('.review-card').forEach(card => {
+    card.addEventListener('keydown', e => {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); card.click(); }
+    });
+  });
+</script>
+
+</body>
+</html>
