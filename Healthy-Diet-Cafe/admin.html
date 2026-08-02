@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Meal Card — Admin — Healthy Diet Cafe</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #EFF3EA;
+    --bg-card: #FBFCF9;
+    --ink: #223326;
+    --ink-soft: #5A6B57;
+    --rim: #C9CBB8;
+    --turmeric: #D9A441;
+    --berry: #A13D63;
+    --leaf: #4C7A52;
+    --rule: rgba(34,51,38,0.12);
+    --radius: 16px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'Work Sans', sans-serif;
+    min-height: 100vh;
+    padding: 28px 16px 60px;
+  }
+  .wrap{ max-width: 920px; margin: 0 auto; }
+
+  .eyebrow{
+    font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--leaf); font-weight:600; margin-bottom: 4px;
+  }
+  h1{
+    font-family:'Fraunces', serif; font-weight:600; font-size: 28px;
+    margin: 0 0 2px; letter-spacing: -0.01em;
+  }
+  .sub{ color: var(--ink-soft); font-size: 14px; margin-bottom: 24px; }
+
+  .card{
+    background: var(--bg-card); border-radius: var(--radius);
+    border: 1px solid var(--rule); padding: 22px; margin-bottom: 18px;
+    box-shadow: 0 1px 2px rgba(34,51,38,0.04);
+  }
+
+  /* Key gate */
+  #gate .row{ display:flex; gap:8px; }
+  input[type="password"], input[type="text"]{
+    padding: 12px 14px; border-radius: 10px; border: 1px solid var(--rim);
+    background:#fff; font-size:15px; font-family:'Work Sans',sans-serif; color:var(--ink);
+    outline:none;
+  }
+  input[type="password"]{ flex:1; }
+  input:focus{ border-color: var(--leaf); }
+  button{
+    font-family:'Work Sans', sans-serif; font-weight:600; font-size:14px;
+    border:none; border-radius: 10px; padding: 12px 16px; cursor:pointer;
+  }
+  button:active{ transform: scale(0.98); }
+  .btn-primary{ background: var(--leaf); color:#fff; }
+  .btn-ghost{ background: #EDEEE6; color: var(--ink); }
+  .msg.err{ color: var(--berry); font-size:13px; margin-top:8px; }
+
+  /* Summary cards */
+  .summary-grid{
+    display:grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 18px;
+  }
+  @media (max-width: 640px){ .summary-grid{ grid-template-columns: repeat(2, 1fr); } }
+  .stat{
+    background: var(--bg-card); border:1px solid var(--rule); border-radius: 14px;
+    padding: 16px;
+  }
+  .stat-num{ font-family:'Fraunces', serif; font-size: 26px; font-weight:600; }
+  .stat-label{ font-size: 12px; color: var(--ink-soft); margin-top:2px; }
+
+  /* Toolbar */
+  .toolbar{ display:flex; gap:8px; align-items:center; margin-bottom: 14px; flex-wrap:wrap; }
+  .toolbar input[type="text"]{ flex:1; min-width: 160px; }
+  .toolbar .spacer{ flex:1; }
+
+  /* Table */
+  table{ width:100%; border-collapse: collapse; font-size: 14px; }
+  thead th{
+    text-align:left; font-size: 11px; text-transform:uppercase; letter-spacing:0.06em;
+    color: var(--ink-soft); border-bottom: 1px solid var(--rule); padding: 8px 10px;
+  }
+  tbody td{ padding: 10px; border-bottom: 1px solid var(--rule); vertical-align:middle; }
+  tbody tr:last-child td{ border-bottom:none; }
+  .phone-cell{ font-weight:600; }
+  .bar-wrap{ display:flex; align-items:center; gap:8px; }
+  .bar-track{
+    flex:1; height:6px; border-radius:4px; background: #E7E9DF; overflow:hidden; min-width:70px;
+  }
+  .bar-fill{ height:100%; background: var(--leaf); }
+  .bar-fill.complete{ background: var(--berry); }
+  .count-text{ font-size: 12px; color: var(--ink-soft); white-space:nowrap; }
+  .badge{
+    display:inline-block; font-size: 11px; font-weight:600; padding: 3px 8px;
+    border-radius: 999px;
+  }
+  .badge.active{ background: rgba(217,164,65,0.18); color:#8a6b1f; }
+  .badge.complete{ background: rgba(76,122,82,0.14); color: var(--leaf); }
+  .badge.today{ background: rgba(161,61,99,0.12); color: var(--berry); margin-left:6px; }
+
+  .empty{ text-align:center; color: var(--ink-soft); font-size: 13px; padding: 24px 0; }
+
+  #dashboard{ display:none; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="eyebrow">Healthy Diet Cafe · Admin</div>
+  <h1>Meal Card Dashboard</h1>
+  <div class="sub">See every subscriber and how many meals they've redeemed.</div>
+
+  <div class="card" id="gate">
+    <div class="row">
+      <input type="password" id="keyInput" placeholder="Admin key" />
+      <button class="btn-primary" id="loadBtn">View dashboard</button>
+    </div>
+    <div class="msg err" id="gateMsg"></div>
+  </div>
+
+  <div id="dashboard">
+    <div class="summary-grid" id="summaryGrid"></div>
+
+    <div class="toolbar">
+      <input type="text" id="searchInput" placeholder="Search phone number..." />
+      <div class="spacer"></div>
+      <button class="btn-ghost" id="exportBtn">Export CSV</button>
+      <button class="btn-ghost" id="refreshBtn">Refresh</button>
+      <button class="btn-ghost" id="signOutBtn">Sign out</button>
+    </div>
+
+    <div class="card" style="padding:0; overflow-x:auto;">
+      <table id="table">
+        <thead>
+          <tr>
+            <th>Phone</th>
+            <th>Started</th>
+            <th>Progress</th>
+            <th>Last meal</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+      <div class="empty" id="emptyMsg" style="display:none;">No customers yet.</div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // ====== CONFIG ======
+  const API_BASE = "https://foh-healthy-diet-cafe.jeezmanw.workers.dev"; // TODO: same Worker URL as index.html
+  const SESSION_KEY = "hdc_admin_key";
+
+  const $ = (id) => document.getElementById(id);
+  let allRecords = [];
+
+  function fmtDate(d){
+    if(!d) return "—";
+    const dt = new Date(d + "T00:00:00");
+    return dt.toLocaleDateString("en-IN", { day:"numeric", month:"short" });
+  }
+
+  function todayStr(){ return new Date().toISOString().slice(0,10); }
+
+  async function fetchDashboard(key){
+    const res = await fetch(`${API_BASE}/api/admin/list?key=${encodeURIComponent(key)}`);
+    if(res.status === 401) throw new Error("unauthorized");
+    if(!res.ok) throw new Error("fetch_failed");
+    return res.json();
+  }
+
+  function renderSummary(summary){
+    const cards = [
+      { num: summary.totalCustomers, label: "Total customers" },
+      { num: summary.mealsToday, label: "Meals served today" },
+      { num: summary.active, label: "Active subscriptions" },
+      { num: summary.completed, label: "Completed cycles" },
+    ];
+    $("summaryGrid").innerHTML = cards.map(c =>
+      `<div class="stat"><div class="stat-num">${c.num}</div><div class="stat-label">${c.label}</div></div>`
+    ).join("");
+  }
+
+  function renderTable(records){
+    const today = todayStr();
+    if(records.length === 0){
+      $("tbody").innerHTML = "";
+      $("emptyMsg").style.display = "block";
+      return;
+    }
+    $("emptyMsg").style.display = "none";
+
+    $("tbody").innerHTML = records.map(r => {
+      const total = r.totalDays || 26;
+      const collected = r.mealsCollected || 0;
+      const pct = Math.min(100, Math.round((collected/total)*100));
+      const complete = collected >= total;
+      const lastMeal = (r.log && r.log.length) ? r.log[r.log.length-1] : null;
+      const taggedToday = lastMeal === today;
+      return `
+        <tr>
+          <td class="phone-cell">+91 ${r.phone}</td>
+          <td>${fmtDate(r.startDate)}</td>
+          <td>
+            <div class="bar-wrap">
+              <div class="bar-track"><div class="bar-fill ${complete ? "complete":""}" style="width:${pct}%"></div></div>
+              <div class="count-text">${collected}/${total}</div>
+            </div>
+          </td>
+          <td>${fmtDate(lastMeal)}</td>
+          <td>
+            <span class="badge ${complete ? "complete":"active"}">${complete ? "Complete" : "Active"}</span>
+            ${taggedToday ? '<span class="badge today">Today</span>' : ""}
+          </td>
+        </tr>
+      `;
+    }).join("");
+  }
+
+  function applyFilter(){
+    const q = $("searchInput").value.replace(/\D/g,"");
+    const filtered = q ? allRecords.filter(r => r.phone.includes(q)) : allRecords;
+    renderTable(filtered);
+  }
+
+  function exportCSV(){
+    const rows = [["Phone","Started","Meals Collected","Total Days","Last Meal","Status"]];
+    allRecords.forEach(r => {
+      const complete = (r.mealsCollected||0) >= (r.totalDays||26);
+      const lastMeal = (r.log && r.log.length) ? r.log[r.log.length-1] : "";
+      rows.push([r.phone, r.startDate, r.mealsCollected||0, r.totalDays||26, lastMeal, complete ? "Complete":"Active"]);
+    });
+    const csv = rows.map(row => row.map(v => `"${String(v).replace(/"/g,'""')}"`).join(",")).join("\n");
+    const blob = new Blob([csv], {type:"text/csv"});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `healthy-diet-cafe-meals-${todayStr()}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  async function loadDashboard(key){
+    $("gateMsg").textContent = "";
+    try{
+      const data = await fetchDashboard(key);
+      sessionStorage.setItem(SESSION_KEY, key);
+      allRecords = data.records || [];
+      renderSummary(data.summary || {});
+      renderTable(allRecords);
+      $("gate").style.display = "none";
+      $("dashboard").style.display = "block";
+    }catch(e){
+      if(e.message === "unauthorized"){
+        $("gateMsg").textContent = "Incorrect admin key.";
+      }else{
+        $("gateMsg").textContent = "Couldn't load the dashboard. Check your connection and try again.";
+      }
+    }
+  }
+
+  $("loadBtn").addEventListener("click", () => {
+    const key = $("keyInput").value.trim();
+    if(!key){ $("gateMsg").textContent = "Enter the admin key."; return; }
+    loadDashboard(key);
+  });
+
+  $("keyInput").addEventListener("keydown", (e) => {
+    if(e.key === "Enter") $("loadBtn").click();
+  });
+
+  $("searchInput").addEventListener("input", applyFilter);
+  $("exportBtn").addEventListener("click", exportCSV);
+  $("refreshBtn").addEventListener("click", () => {
+    const key = sessionStorage.getItem(SESSION_KEY);
+    if(key) loadDashboard(key);
+  });
+  $("signOutBtn").addEventListener("click", () => {
+    sessionStorage.removeItem(SESSION_KEY);
+    $("dashboard").style.display = "none";
+    $("gate").style.display = "block";
+    $("keyInput").value = "";
+  });
+
+  // Auto-load if key already in this browser tab's session
+  const savedKey = sessionStorage.getItem(SESSION_KEY);
+  if(savedKey){
+    $("keyInput").value = savedKey;
+    loadDashboard(savedKey);
+  }
+</script>
+</body>
+</html>
