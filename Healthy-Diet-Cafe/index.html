@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+<title>Meal Card — Healthy Diet Cafe</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #EFF3EA;
+    --bg-card: #FBFCF9;
+    --ink: #223326;
+    --ink-soft: #5A6B57;
+    --rim: #C9CBB8;
+    --turmeric: #D9A441;
+    --berry: #A13D63;
+    --leaf: #4C7A52;
+    --rule: rgba(34,51,38,0.12);
+    --radius: 18px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'Work Sans', sans-serif;
+    min-height: 100vh;
+    display:flex;
+    justify-content:center;
+    padding: 32px 16px 64px;
+    line-height:1.5;
+  }
+  .wrap{ width:100%; max-width: 480px; }
+
+  .eyebrow{
+    font-size: 12px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--leaf);
+    font-weight:600;
+    margin-bottom: 4px;
+  }
+  h1{
+    font-family:'Fraunces', serif;
+    font-optical-sizing:auto;
+    font-weight:600;
+    font-size: 32px;
+    margin: 0 0 2px;
+    letter-spacing: -0.01em;
+  }
+  .sub{
+    color: var(--ink-soft);
+    font-size: 14px;
+    margin-bottom: 28px;
+  }
+
+  .card{
+    background: var(--bg-card);
+    border-radius: var(--radius);
+    border: 1px solid var(--rule);
+    padding: 24px;
+    margin-bottom: 20px;
+    box-shadow: 0 1px 2px rgba(34,51,38,0.04);
+  }
+
+  /* Phone entry (first tap only) */
+  #gate .row{ display:flex; gap:8px; }
+  input[type="tel"]{
+    flex:1;
+    padding: 13px 14px;
+    border-radius: 12px;
+    border: 1px solid var(--rim);
+    background: #fff;
+    font-size: 16px;
+    font-family: 'Work Sans', sans-serif;
+    color: var(--ink);
+    outline:none;
+  }
+  input[type="tel"]:focus{ border-color: var(--leaf); }
+  button{
+    font-family: 'Work Sans', sans-serif;
+    font-weight: 600;
+    font-size: 15px;
+    border: none;
+    border-radius: 12px;
+    padding: 13px 18px;
+    cursor:pointer;
+    transition: transform 0.12s ease, opacity 0.12s ease;
+  }
+  button:active{ transform: scale(0.97); }
+  button:disabled{ opacity:0.5; cursor:default; }
+  .btn-primary{ background: var(--leaf); color: #fff; }
+  .hint{ font-size: 12px; color: var(--ink-soft); margin-top:10px; }
+
+  /* Status banner from this tap */
+  .tap-banner{
+    display:flex; align-items:center; gap:10px;
+    border-radius: 14px;
+    padding: 14px 16px;
+    margin-bottom: 18px;
+    font-size: 14px;
+    font-weight: 500;
+  }
+  .tap-banner.confirmed{ background: rgba(76,122,82,0.12); color: var(--leaf); }
+  .tap-banner.already{ background: rgba(217,164,65,0.16); color: #8a6b1f; }
+  .tap-banner.complete{ background: rgba(161,61,99,0.1); color: var(--berry); }
+  .tap-banner .dot-icon{
+    width:22px; height:22px; border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    flex-shrink:0;
+    background: currentColor;
+  }
+  .tap-banner .dot-icon svg{ width:12px; height:12px; }
+  .tap-banner .dot-icon svg path{ stroke:#fff; }
+
+  /* Status header */
+  .greeting{ font-size:13px; color:var(--ink-soft); }
+  .greeting b{ color: var(--ink); }
+  .progress-line{
+    display:flex; align-items:baseline; gap:8px;
+    margin-top: 6px; margin-bottom: 2px;
+  }
+  .progress-num{ font-family:'Fraunces', serif; font-size: 30px; font-weight:600; }
+  .progress-of{ color: var(--ink-soft); font-size: 14px; }
+  .progress-label{ font-size: 13px; color: var(--ink-soft); }
+
+  /* Week grid — the signature element */
+  .planner{ margin-top: 22px; }
+  .week{ margin-bottom: 14px; }
+  .week:last-child{ margin-bottom: 0; }
+  .week-label{
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    margin-bottom: 8px;
+    display:flex; align-items:center; gap:8px;
+  }
+  .week-label::after{
+    content:"";
+    flex:1;
+    height:1px;
+    background: var(--rule);
+  }
+  .dots{ display:flex; gap: 8px; }
+  .dot{
+    flex:1;
+    aspect-ratio: 1;
+    border-radius: 50%;
+    border: 1.5px solid var(--rim);
+    display:flex; align-items:center; justify-content:center;
+    font-size: 10px;
+    color: var(--ink-soft);
+    background: #fff;
+    position:relative;
+  }
+  .dot.filled{
+    background: var(--leaf);
+    border-color: var(--leaf);
+    color: #fff;
+  }
+  .dot.today-fresh{
+    border-color: var(--turmeric);
+    border-width: 2px;
+  }
+  .dot.filled svg{ width:13px; height:13px; }
+
+  .complete-banner{
+    margin-top: 18px;
+    background: rgba(76,122,82,0.1);
+    border: 1px solid rgba(76,122,82,0.3);
+    color: var(--leaf);
+    border-radius: 12px;
+    padding: 12px 14px;
+    font-size: 13px;
+    font-weight: 500;
+  }
+
+  .not-you{
+    text-align:center;
+    margin-top: -6px;
+  }
+  .not-you span{
+    font-size:12px; color:var(--ink-soft); cursor:pointer; text-decoration:underline;
+  }
+
+  .msg{ font-size:13px; margin-top:10px; }
+  .msg.err{ color: var(--berry); }
+
+  footer{
+    text-align:center;
+    font-size: 11px;
+    color: var(--ink-soft);
+    opacity:0.7;
+    margin-top: 8px;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="eyebrow">Healthy Diet Cafe</div>
+  <h1>Meal Card</h1>
+  <div class="sub">Daily meal subscription · Pune</div>
+
+  <!-- Phone gate (only ever shown on the very first tap) -->
+  <div class="card" id="gate">
+    <div class="row">
+      <input type="tel" id="phoneInput" placeholder="Your phone number" maxlength="10" inputmode="numeric" />
+      <button class="btn-primary" id="showCardBtn">Log meal</button>
+    </div>
+    <div class="hint">We use this to track your meals — no app, no password. Remembered on this phone so next tap is instant.</div>
+    <div class="msg err" id="gateMsg"></div>
+  </div>
+
+  <!-- Result of this tap -->
+  <div id="tapBanner"></div>
+
+  <!-- Card view -->
+  <div class="card" id="cardView" style="display:none;">
+    <div class="greeting">Hi, <b id="phoneDisplay"></b></div>
+    <div class="progress-line">
+      <span class="progress-num" id="mealsCount">0</span>
+      <span class="progress-of">/ 26 meals</span>
+    </div>
+    <div class="progress-label" id="progressLabel">Day 1 of your cycle</div>
+
+    <div class="planner" id="planner"></div>
+
+    <div class="complete-banner" id="completeBanner" style="display:none;">
+      All 26 meals collected. Ask at the counter about renewing your subscription.
+    </div>
+  </div>
+
+  <div class="not-you" id="notYouWrap" style="display:none;">
+    <span id="notYouBtn">Not you? Switch number</span>
+  </div>
+
+  <footer>Powered by Tap2Loop</footer>
+</div>
+
+<script>
+  // ====== CONFIG ======
+  const API_BASE = "healthy-diet-cafe.jeezmanw.workers.dev"; // TODO: replace with your deployed Worker URL
+  const TOTAL_MEALS = 26;
+  const STORAGE_KEY = "hdc_phone";
+
+  const $ = (id) => document.getElementById(id);
+
+  let currentPhone = localStorage.getItem(STORAGE_KEY) || "";
+
+  function normalizePhone(v){ return v.replace(/\D/g,"").slice(-10); }
+  function checkSvg(){
+    return `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M5 13l4 4L19 7" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+  }
+
+  async function tapConfirm(phone){
+    const res = await fetch(`${API_BASE}/api/tap`, {
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({phone})
+    });
+    const data = await res.json().catch(()=>null);
+    if(!res.ok || !data) throw new Error("tap_failed");
+    return data;
+  }
+
+  function renderBanner(result){
+    let cls, icon, text;
+    if(result === "confirmed"){
+      cls = "confirmed";
+      icon = `<div class="dot-icon">${checkSvg()}</div>`;
+      text = "Meal logged for today.";
+    }else if(result === "already_today"){
+      cls = "already";
+      icon = `<div class="dot-icon" style="background:var(--turmeric)"></div>`;
+      text = "Already logged today — see you tomorrow.";
+    }else if(result === "cycle_complete"){
+      cls = "complete";
+      icon = `<div class="dot-icon" style="background:var(--berry)"></div>`;
+      text = "All 26 meals already collected.";
+    }else{
+      return;
+    }
+    $("tapBanner").innerHTML = `<div class="tap-banner ${cls}">${icon}<span>${text}</span></div>`;
+  }
+
+  function renderPlanner(data){
+    const collected = data.mealsCollected || 0;
+    let html = "";
+    for(let w=0; w<4; w++){
+      const start = w*7;
+      const count = Math.min(7, TOTAL_MEALS - start);
+      if(count <= 0) break;
+      html += `<div class="week"><div class="week-label">Week ${w+1}</div><div class="dots">`;
+      for(let i=0;i<count;i++){
+        const dayIndex = start + i; // 0-based
+        const filled = dayIndex < collected;
+        const isFresh = dayIndex === collected - 1 && data.result === "confirmed";
+        html += `<div class="dot ${filled ? "filled":""} ${isFresh ? "today-fresh":""}">${filled ? checkSvg() : ""}</div>`;
+      }
+      html += `</div></div>`;
+    }
+    $("planner").innerHTML = html;
+  }
+
+  function showCard(data){
+    $("gate").style.display = "none";
+    $("cardView").style.display = "block";
+    $("notYouWrap").style.display = "block";
+    $("phoneDisplay").textContent = "+91 " + currentPhone;
+    $("mealsCount").textContent = data.mealsCollected || 0;
+    const dayNum = (data.log || []).length;
+    $("progressLabel").textContent = data.mealsCollected >= TOTAL_MEALS
+      ? "Cycle complete"
+      : `Day ${dayNum} of your cycle`;
+    $("completeBanner").style.display = data.mealsCollected >= TOTAL_MEALS ? "block" : "none";
+    renderBanner(data.result);
+    renderPlanner(data);
+  }
+
+  async function runTap(phone){
+    $("gateMsg").textContent = "";
+    try{
+      const data = await tapConfirm(phone);
+      localStorage.setItem(STORAGE_KEY, phone);
+      currentPhone = phone;
+      showCard(data);
+    }catch(e){
+      $("gateMsg").textContent = "Couldn't reach the counter. Check your connection and try again.";
+    }
+  }
+
+  $("showCardBtn").addEventListener("click", () => {
+    const phone = normalizePhone($("phoneInput").value);
+    if(phone.length !== 10){
+      $("gateMsg").textContent = "Enter a valid 10-digit phone number.";
+      return;
+    }
+    runTap(phone);
+  });
+
+  $("notYouBtn").addEventListener("click", () => {
+    localStorage.removeItem(STORAGE_KEY);
+    currentPhone = "";
+    $("cardView").style.display = "none";
+    $("notYouWrap").style.display = "none";
+    $("tapBanner").innerHTML = "";
+    $("phoneInput").value = "";
+    $("gate").style.display = "block";
+  });
+
+  // Every landing on this page (i.e. every tap of the NFC tag / QR scan)
+  // is itself the confirmation — no separate staff step.
+  if(currentPhone){
+    $("phoneInput").value = currentPhone;
+    runTap(currentPhone);
+  }
+</script>
+</body>
+</html>
