@@ -67,7 +67,7 @@
 
   /* Phone entry (first tap only) */
   #gate .row{ display:flex; gap:8px; }
-  input[type="tel"]{
+  input[type="tel"], input[type="text"]{
     flex:1;
     padding: 13px 14px;
     border-radius: 12px;
@@ -77,8 +77,9 @@
     font-family: 'Work Sans', sans-serif;
     color: var(--ink);
     outline:none;
+    width:100%;
   }
-  input[type="tel"]:focus{ border-color: var(--leaf); }
+  input[type="tel"]:focus, input[type="text"]:focus{ border-color: var(--leaf); }
   button{
     font-family: 'Work Sans', sans-serif;
     font-weight: 600;
@@ -205,8 +206,11 @@
   <h1>Meal Card</h1>
   <div class="sub">Daily meal subscription · Pune</div>
 
-  <!-- Phone gate (only ever shown on the very first tap) -->
+  <!-- Phone + name gate (only ever shown on the very first tap) -->
   <div class="card" id="gate">
+    <div class="row" style="margin-bottom:8px;">
+      <input type="text" id="nameInput" placeholder="Your name" />
+    </div>
     <div class="row">
       <input type="tel" id="phoneInput" placeholder="Your phone number" maxlength="10" inputmode="numeric" />
       <button class="btn-primary" id="showCardBtn">Log meal</button>
@@ -243,7 +247,7 @@
 
 <script>
   // ====== CONFIG ======
-  const API_BASE = "https://healthy-diet-cafe.jeezmanw.workers.dev"; // TODO: replace with your deployed Worker URL
+  const API_BASE = "https://healthy-diet-cafe-worker.YOUR-SUBDOMAIN.workers.dev"; // TODO: replace with your deployed Worker URL
   const TOTAL_MEALS = 26;
   const STORAGE_KEY = "hdc_phone";
 
@@ -256,11 +260,11 @@
     return `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M5 13l4 4L19 7" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
   }
 
-  async function tapConfirm(phone){
+  async function tapConfirm(phone, name){
     const res = await fetch(`${API_BASE}/api/tap`, {
       method:"POST",
       headers:{"Content-Type":"application/json"},
-      body: JSON.stringify({phone})
+      body: JSON.stringify({phone, name})
     });
     const data = await res.json().catch(()=>null);
     if(!res.ok || !data) throw new Error("tap_failed");
@@ -310,7 +314,7 @@
     $("gate").style.display = "none";
     $("cardView").style.display = "block";
     $("notYouWrap").style.display = "block";
-    $("phoneDisplay").textContent = "+91 " + currentPhone;
+    $("phoneDisplay").textContent = data.name ? data.name : ("+91 " + currentPhone);
     $("mealsCount").textContent = data.mealsCollected || 0;
     const dayNum = (data.log || []).length;
     $("progressLabel").textContent = data.mealsCollected >= TOTAL_MEALS
@@ -321,10 +325,10 @@
     renderPlanner(data);
   }
 
-  async function runTap(phone){
+  async function runTap(phone, name){
     $("gateMsg").textContent = "";
     try{
-      const data = await tapConfirm(phone);
+      const data = await tapConfirm(phone, name);
       localStorage.setItem(STORAGE_KEY, phone);
       currentPhone = phone;
       showCard(data);
@@ -335,11 +339,16 @@
 
   $("showCardBtn").addEventListener("click", () => {
     const phone = normalizePhone($("phoneInput").value);
+    const name = $("nameInput").value.trim();
+    if(!name){
+      $("gateMsg").textContent = "Enter your name.";
+      return;
+    }
     if(phone.length !== 10){
       $("gateMsg").textContent = "Enter a valid 10-digit phone number.";
       return;
     }
-    runTap(phone);
+    runTap(phone, name);
   });
 
   $("notYouBtn").addEventListener("click", () => {
@@ -349,6 +358,7 @@
     $("notYouWrap").style.display = "none";
     $("tapBanner").innerHTML = "";
     $("phoneInput").value = "";
+    $("nameInput").value = "";
     $("gate").style.display = "block";
   });
 
@@ -356,7 +366,7 @@
   // is itself the confirmation — no separate staff step.
   if(currentPhone){
     $("phoneInput").value = currentPhone;
-    runTap(currentPhone);
+    runTap(currentPhone, "");
   }
 </script>
 </body>
