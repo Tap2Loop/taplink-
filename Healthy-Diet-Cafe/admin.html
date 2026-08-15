@@ -130,7 +130,7 @@
     <div class="summary-grid" id="summaryGrid"></div>
 
     <div class="toolbar">
-      <input type="text" id="searchInput" placeholder="Search phone number..." />
+      <input type="text" id="searchInput" placeholder="Search name or phone..." />
       <div class="spacer"></div>
       <button class="btn-ghost" id="exportBtn">Export CSV</button>
       <button class="btn-ghost" id="refreshBtn">Refresh</button>
@@ -141,6 +141,7 @@
       <table id="table">
         <thead>
           <tr>
+            <th>Name</th>
             <th>Phone</th>
             <th>Started</th>
             <th>Progress</th>
@@ -157,7 +158,7 @@
 
 <script>
   // ====== CONFIG ======
-  const API_BASE = "https://healthy-diet-cafe.jeezmanw.workers.dev"; // TODO: same Worker URL as index.html
+  const API_BASE = "https://healthy-diet-cafe-worker.YOUR-SUBDOMAIN.workers.dev"; // TODO: same Worker URL as index.html
   const SESSION_KEY = "hdc_admin_key";
 
   const $ = (id) => document.getElementById(id);
@@ -206,8 +207,10 @@
       const complete = collected >= total;
       const lastMeal = (r.log && r.log.length) ? r.log[r.log.length-1] : null;
       const taggedToday = lastMeal === today;
+      const displayName = r.name && r.name.trim() ? r.name : "—";
       return `
         <tr>
+          <td>${displayName}</td>
           <td class="phone-cell">+91 ${r.phone}</td>
           <td>${fmtDate(r.startDate)}</td>
           <td>
@@ -227,17 +230,24 @@
   }
 
   function applyFilter(){
-    const q = $("searchInput").value.replace(/\D/g,"");
-    const filtered = q ? allRecords.filter(r => r.phone.includes(q)) : allRecords;
+    const raw = $("searchInput").value.trim();
+    const qDigits = raw.replace(/\D/g,"");
+    const qLower = raw.toLowerCase();
+    const filtered = raw
+      ? allRecords.filter(r =>
+          (qDigits && r.phone.includes(qDigits)) ||
+          (r.name && r.name.toLowerCase().includes(qLower))
+        )
+      : allRecords;
     renderTable(filtered);
   }
 
   function exportCSV(){
-    const rows = [["Phone","Started","Meals Collected","Total Days","Last Meal","Status"]];
+    const rows = [["Name","Phone","Started","Meals Collected","Total Days","Last Meal","Status"]];
     allRecords.forEach(r => {
       const complete = (r.mealsCollected||0) >= (r.totalDays||26);
       const lastMeal = (r.log && r.log.length) ? r.log[r.log.length-1] : "";
-      rows.push([r.phone, r.startDate, r.mealsCollected||0, r.totalDays||26, lastMeal, complete ? "Complete":"Active"]);
+      rows.push([r.name || "", r.phone, r.startDate, r.mealsCollected||0, r.totalDays||26, lastMeal, complete ? "Complete":"Active"]);
     });
     const csv = rows.map(row => row.map(v => `"${String(v).replace(/"/g,'""')}"`).join(",")).join("\n");
     const blob = new Blob([csv], {type:"text/csv"});
