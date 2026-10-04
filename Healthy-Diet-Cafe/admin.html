@@ -8,7 +8,6 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
-  /* ... (Keep all your existing CSS styles exactly as they are) ... */
   :root{
     --bg: #EFF3EA;
     --bg-card: #FBFCF9;
@@ -112,6 +111,7 @@
     <div class="toolbar">
       <input type="text" id="searchInput" placeholder="Search name or phone..." />
       <div class="spacer"></div>
+      <button class="btn-ghost" id="exportBtn">Export CSV</button>
       <button class="btn-primary btn-small" id="addCustomerBtn">+ New Customer</button>
       <button class="btn-ghost" id="refreshBtn">Refresh</button>
       <button class="btn-ghost" id="signOutBtn">Sign out</button>
@@ -178,7 +178,7 @@
         <label>Description</label>
         <input type="text" id="logMealDesc" value="Standard Meal" />
       </div>
-      <button class="btn-primary" onclick="submitLogMeal()">Confirm Meal</button>
+      <button class="btn-primary" onclick="submitLogMeal()" id="logMealBtn">Confirm Meal</button>
       <button class="btn-ghost" onclick="closeLogMealForm()">Cancel</button>
       <div class="msg" id="logMealMsg"></div>
     </div>
@@ -194,7 +194,7 @@
         <label>Description</label>
         <input type="text" id="topUpDesc" value="Cash top-up" />
       </div>
-      <button class="btn-primary" onclick="submitTopUp()">Confirm Top-up</button>
+      <button class="btn-primary" onclick="submitTopUp()" id="topUpBtn">Confirm Top-up</button>
       <button class="btn-ghost" onclick="closeTopUpForm()">Cancel</button>
       <div class="msg" id="topUpMsg"></div>
     </div>
@@ -255,7 +255,7 @@
       <input type="number" id="newTopUp" placeholder="5000" step="100" min="0" />
     </div>
 
-    <button class="btn-primary" onclick="submitNewCustomer()">Create Customer</button>
+    <button class="btn-primary" onclick="submitNewCustomer()" id="createCustomerBtn">Create Customer</button>
     <button class="btn-ghost" onclick="closeNewCustomer()">Cancel</button>
     <div class="msg" id="newCustomerMsg"></div>
   </div>
@@ -269,7 +269,14 @@
   let allRecords = [];
   let currentPhone = null;
 
-  // Helper to prevent NaN from ever being displayed
+  // --- SECURITY: Prevent XSS ---
+  function escapeHtml(str) {
+    if (!str) return "";
+    return String(str).replace(/[&<>"']/g, function(m) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m];
+    });
+  }
+
   function safeNum(val, fallback = 0) {
     const n = Number(val);
     return isNaN(n) ? fallback : n;
@@ -343,9 +350,9 @@
 
       return `
         <tr onclick="openProfile('${r.phone}')">
-          <td>${r.name || "—"}</td>
-          <td class="phone-cell">+91 ${r.phone}</td>
-          <td>${fmtDate(r.dob)}</td>
+          <td>${escapeHtml(r.name) || "—"}</td>
+          <td class="phone-cell">+91 ${escapeHtml(r.phone)}</td>
+          <td>${r.dob ? fmtDate(r.dob) : "—"}</td>
           <td>${fmtMoney(r.walletBalance)}</td>
           <td>${mealsLeft}</td>
           <td>${r.lastMealDate ? fmtDate(r.lastMealDate) : "—"}</td>
@@ -368,12 +375,45 @@
     renderTable(filtered);
   }
 
+  // --- EXPORT CSV ---
+  function exportCSV(){
+    if(!allRecords || allRecords.length === 0){
+      alert("No customer data to export.");
+      return;
+    }
+    const rows = [["Name","Phone","DOB","Wallet Balance","Base Meal Price","Meals Left","Total Spent","Last Meal Date","Status"]];
+    allRecords.forEach(r => {
+      const mealsLeft = safeNum(r.mealsLeft);
+      const status = mealsLeft <= 0 ? "No Balance" : (mealsLeft <= 3 ? "Low" : "Active");
+      const lastMeal = r.lastMealDate ? r.lastMealDate : "—";
+      rows.push([
+        r.name || "—",
+        r.phone,
+        r.dob || "—",
+        safeNum(r.walletBalance),
+        safeNum(r.baseMealPrice),
+        mealsLeft,
+        safeNum(r.totalSpent),
+        lastMeal,
+        status
+      ]);
+    });
+    const csvContent = rows.map(row => row.map(v => `"${String(v).replace(/"/g,'""')}"`).join(",")).join("\n");
+    const blob = new Blob([csvContent], {type:"text/csv;charset=utf-8;"});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `healthy-diet-cafe-export-${todayStr()}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
   async function openProfile(phone){
     currentPhone = phone;
     const data = await api(`/api/admin/customer?phone=${phone}`);
     if(data.error) { alert("Could not load customer"); return; }
 
-    $("modalName").textContent = data.name;
+    $("modalName").textContent = data.name; // Safe: uses textContent
     $("modalPhone").textContent = "+91 " + data.phone;
     $("modalDob").textContent = data.dob ? fmtDate(data.dob) : "—";
     
@@ -406,7 +446,7 @@
       return `
         <tr>
           <td>${fmtDate(l.date)}</td>
-          <td>${l.description || "—"}</td>
+          <td>${escapeHtml(l.description) || "—"}</td>
           <td class="${isDebit ? "debit" : "credit"}">${isDebit ? "-" : "+"}${fmtMoney(Math.abs(l.amount))}</td>
           <td>${fmtMoney(l.balanceAfter)}</td>
         </tr>
@@ -444,6 +484,7 @@
     const description = $("logMealDesc").value.trim();
     if(isNaN(amount) || amount <= 0){ $("logMealMsg").textContent = "Enter a valid amount."; return; }
 
+    $("logMealBtn").disabled = true;
     $("logMealMsg").textContent = "Logging...";
     const key = sessionStorage.getItem(SESSION_KEY);
     const res = await fetch(`${API_BASE}/api/admin/log-meal`, {
@@ -452,6 +493,8 @@
       body: JSON.stringify({ key, phone: currentPhone, amount, description }),
     });
     const data = await res.json();
+    $("logMealBtn").disabled = false;
+    
     if(data.error){
       $("logMealMsg").textContent = data.error === "insufficient_balance" ? "Insufficient balance." : "Error: " + data.error;
       $("logMealMsg").className = "msg err";
@@ -467,6 +510,7 @@
     const description = $("topUpDesc").value.trim();
     if(isNaN(amount) || amount <= 0){ $("topUpMsg").textContent = "Enter a valid amount."; return; }
 
+    $("topUpBtn").disabled = true;
     $("topUpMsg").textContent = "Adding...";
     const key = sessionStorage.getItem(SESSION_KEY);
     const res = await fetch(`${API_BASE}/api/admin/top-up`, {
@@ -475,6 +519,8 @@
       body: JSON.stringify({ key, phone: currentPhone, amount, description }),
     });
     const data = await res.json();
+    $("topUpBtn").disabled = false;
+    
     if(data.error){
       $("topUpMsg").textContent = "Error: " + data.error;
       $("topUpMsg").className = "msg err";
@@ -544,6 +590,7 @@
       return;
     }
 
+    $("createCustomerBtn").disabled = true;
     $("newCustomerMsg").textContent = "Creating...";
     const key = sessionStorage.getItem(SESSION_KEY);
     const res = await fetch(`${API_BASE}/api/admin/create`, {
@@ -552,6 +599,8 @@
       body: JSON.stringify({ key, name, phone, dob, baseMealPrice, initialTopUp }),
     });
     const data = await res.json();
+    $("createCustomerBtn").disabled = false;
+
     if(data.error){
       $("newCustomerMsg").textContent = data.error === "customer_already_exists" ? "A customer with this phone already exists." : "Error: " + data.error;
       return;
@@ -591,6 +640,7 @@
   });
 
   $("searchInput").addEventListener("input", applyFilter);
+  $("exportBtn").addEventListener("click", exportCSV);
   $("refreshBtn").addEventListener("click", () => {
     const key = sessionStorage.getItem(SESSION_KEY);
     if(key) loadDashboard(key);
