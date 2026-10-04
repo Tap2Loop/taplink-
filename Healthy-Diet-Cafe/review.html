@@ -55,16 +55,15 @@
     .divider-text { font-size: 12px; color: #bbb; white-space: nowrap; }
 
     /* ── Own review ── */
-    .own-wrap { background: var(--surface); border: 1.5px solid var(--border); border-radius: var(--radius); overflow: hidden; transition: border-color .15s; }
+    .own-wrap { background: var(--surface); border: 1.5px solid var(--border); border-radius: var(--radius); overflow: hidden; transition: border-color .15s, background .15s; cursor: pointer; position: relative; }
     .own-wrap:focus-within { border-color: var(--green); }
-    .own-textarea { width: 100%; min-height: 90px; border: none; outline: none; resize: none; font-family: var(--font); font-size: 14px; line-height: 1.65; color: var(--black); background: transparent; padding: 14px; }
+    .own-wrap.copied { border-color: var(--success); background: #eaf6ee; }
+    .own-textarea { width: 100%; min-height: 58px; border: none; outline: none; resize: none; font-family: var(--font); font-size: 14px; line-height: 1.55; color: var(--black); background: transparent; padding: 12px 14px 4px; cursor: pointer; }
     .own-textarea::placeholder { color: #bbb; }
-    .own-char { font-size: 11px; color: var(--muted); padding: 0 14px 10px; text-align: right; }
-
-    /* ── Buttons ── */
-    .btn-copy { width: 100%; padding: 13px; border-radius: var(--radius); border: 1.5px solid #a8d4ac; background: #eaf6ec; font-family: var(--font); font-size: 14px; font-weight: 600; color: #2e6337; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 7px; transition: background .15s, border-color .15s, transform .1s; -webkit-tap-highlight-color: transparent; }
-    .btn-copy:active { background: #d9eedd; transform: scale(.98); }
-    .btn-copy.copied { border-color: var(--success); color: var(--success); background: #eaf6ee; }
+    .own-footer { display: flex; justify-content: space-between; align-items: center; padding: 0 14px 10px; }
+    .own-char { font-size: 11px; color: var(--muted); }
+    .own-tap-hint { font-size: 11px; color: var(--muted); display: flex; align-items: center; gap: 4px; transition: color .15s; }
+    .own-wrap.copied .own-tap-hint { color: var(--success); font-weight: 600; }
     .btn-google { width: 100%; padding: 15px; border-radius: var(--radius); border: none; background: var(--green); font-family: var(--font); font-size: 15px; font-weight: 600; color: var(--white); cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 9px; text-decoration: none; -webkit-tap-highlight-color: transparent; transition: opacity .15s; }
     .btn-google:active { opacity: .85; }
     .g-svg { width: 18px; height: 18px; flex-shrink: 0; }
@@ -123,17 +122,16 @@
     </div>
 
     <span class="section-label">Write your own</span>
-    <div class="own-wrap">
-      <textarea class="own-textarea" id="own-review" placeholder="What did you enjoy about your meal?" maxlength="500" oninput="onOwnInput(this)" aria-label="Write your own review"></textarea>
-      <div class="own-char" id="char-count">0 / 500</div>
+    <div class="own-wrap" id="own-wrap" onclick="copyOwn()">
+      <textarea class="own-textarea" id="own-review" placeholder="Tap here to type — tap again to copy" maxlength="500" oninput="onOwnInput(this)" aria-label="Write your own review"></textarea>
+      <div class="own-footer">
+        <span class="own-char" id="char-count">0 / 500</span>
+        <span class="own-tap-hint" id="tap-hint">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          Tap to copy
+        </span>
+      </div>
     </div>
-
-    <button class="btn-copy" id="copy-btn" onclick="copyReview()">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-        <rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
-      </svg>
-      <span id="copy-label">Copy review</span>
-    </button>
 
     <a class="btn-google" href="https://search.google.com/local/writereview?placeid=0x3bc2bb788cb11bf7:0xf34b406fb6ebd9eb" target="_blank" rel="noopener">
       <svg class="g-svg" viewBox="0 0 24 24">
@@ -203,15 +201,20 @@
     } else { selectCard(1); }
   }
 
-  function copyReview() {
-    const own = document.getElementById('own-review').value.trim();
-    const text = own || active[selected] || active[1];
-    const btn = document.getElementById('copy-btn');
-    const label = document.getElementById('copy-label');
+  // Tap own-wrap to copy whatever is typed inside
+  function copyOwn() {
+    const text = document.getElementById('own-review').value.trim();
+    if (!text) return; // nothing typed yet — let them type first
+    const wrap = document.getElementById('own-wrap');
+    const hint = document.getElementById('tap-hint');
     const done = () => {
-      btn.classList.add('copied'); label.textContent = 'Copied!';
+      wrap.classList.add('copied');
+      hint.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Copied!';
       showToast('Copied — now tap Open Google Reviews and paste');
-      setTimeout(() => { btn.classList.remove('copied'); label.textContent = 'Copy review'; }, 3000);
+      setTimeout(() => {
+        wrap.classList.remove('copied');
+        hint.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Tap to copy';
+      }, 3000);
     };
     navigator.clipboard ? navigator.clipboard.writeText(text).then(done).catch(() => fbCopy(text,done)) : fbCopy(text,done);
   }
