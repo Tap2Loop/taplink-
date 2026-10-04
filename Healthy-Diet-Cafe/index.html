@@ -142,6 +142,12 @@
 </div>
 
 <script>
+  function escapeHtml(str) {
+  if (!str) return "";
+  return String(str).replace(/[&<>"']/g, function(m) {
+    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m];
+  });
+}
   const API_BASE = "https://healthy-diet-cafe.jeezmanw.workers.dev"; 
   const STORAGE_KEY = "hdc_customer_phone";
 
@@ -188,7 +194,7 @@
       return `
         <tr>
           <td>${fmtDate(l.date)}</td>
-          <td>${l.description || "—"}</td>
+          <td>${escapeHtml(l.description) || "—"}</td>
           <td class="${isDebit ? "debit" : "credit"}">${isDebit ? "-" : "+"}${fmtMoney(Math.abs(l.amount))}</td>
         </tr>
       `;
