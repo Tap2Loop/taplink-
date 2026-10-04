@@ -29,7 +29,7 @@
     min-height: 100vh;
     padding: 28px 16px 60px;
   }
-  .wrap{ max-width: 920px; margin: 0 auto; }
+  .wrap{ max-width: 1000px; margin: 0 auto; }
 
   .eyebrow{
     font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase;
@@ -49,12 +49,11 @@
 
   /* Key gate */
   #gate .row{ display:flex; gap:8px; }
-  input[type="password"], input[type="text"]{
+  input[type="password"], input[type="text"], input[type="number"], input[type="date"], select{
     padding: 12px 14px; border-radius: 10px; border: 1px solid var(--rim);
     background:#fff; font-size:15px; font-family:'Work Sans',sans-serif; color:var(--ink);
-    outline:none;
+    outline:none; width:100%;
   }
-  input[type="password"]{ flex:1; }
   input:focus{ border-color: var(--leaf); }
   button{
     font-family:'Work Sans', sans-serif; font-weight:600; font-size:14px;
@@ -63,7 +62,9 @@
   button:active{ transform: scale(0.98); }
   .btn-primary{ background: var(--leaf); color:#fff; }
   .btn-ghost{ background: #EDEEE6; color: var(--ink); }
+  .btn-small{ padding: 6px 10px; font-size: 12px; border-radius: 8px; }
   .msg.err{ color: var(--berry); font-size:13px; margin-top:8px; }
+  .msg.ok{ color: var(--leaf); font-size:13px; margin-top:8px; }
 
   /* Summary cards */
   .summary-grid{
@@ -90,23 +91,51 @@
   }
   tbody td{ padding: 10px; border-bottom: 1px solid var(--rule); vertical-align:middle; }
   tbody tr:last-child td{ border-bottom:none; }
+  tbody tr:hover{ background: #F4F6EE; cursor: pointer; }
   .phone-cell{ font-weight:600; }
-  .bar-wrap{ display:flex; align-items:center; gap:8px; }
-  .bar-track{
-    flex:1; height:6px; border-radius:4px; background: #E7E9DF; overflow:hidden; min-width:70px;
-  }
-  .bar-fill{ height:100%; background: var(--leaf); }
-  .bar-fill.complete{ background: var(--berry); }
-  .count-text{ font-size: 12px; color: var(--ink-soft); white-space:nowrap; }
   .badge{
     display:inline-block; font-size: 11px; font-weight:600; padding: 3px 8px;
     border-radius: 999px;
   }
   .badge.active{ background: rgba(217,164,65,0.18); color:#8a6b1f; }
   .badge.complete{ background: rgba(76,122,82,0.14); color: var(--leaf); }
-  .badge.today{ background: rgba(161,61,99,0.12); color: var(--berry); margin-left:6px; }
+  .badge.low{ background: rgba(161,61,99,0.12); color: var(--berry); }
 
   .empty{ text-align:center; color: var(--ink-soft); font-size: 13px; padding: 24px 0; }
+
+  /* Modal */
+  .modal-overlay{
+    display:none; position:fixed; top:0; left:0; width:100%; height:100%;
+    background: rgba(34,51,38,0.5); z-index: 1000; justify-content:center; align-items:center;
+  }
+  .modal-overlay.open{ display:flex; }
+  .modal{
+    background: var(--bg-card); border-radius: var(--radius); padding: 28px;
+    width: 90%; max-width: 640px; max-height: 90vh; overflow-y: auto;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.2);
+  }
+  .modal h2{ font-family:'Fraunces', serif; margin: 0 0 4px; font-size: 22px; }
+  .modal .close{ float:right; font-size: 24px; cursor:pointer; color: var(--ink-soft); background:none; border:none; }
+  .modal .info-grid{ display:grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 16px 0; }
+  .modal .info-item label{ font-size: 11px; text-transform:uppercase; color: var(--ink-soft); display:block; margin-bottom:2px; }
+  .modal .info-item .value{ font-weight:600; font-size:15px; }
+  .modal .wallet-box{
+    background: #F4F6EE; border-radius: 12px; padding: 16px; margin: 16px 0;
+    display:flex; justify-content:space-between; align-items:center;
+  }
+  .modal .wallet-box .balance{ font-family:'Fraunces', serif; font-size: 28px; font-weight:600; }
+  .modal .wallet-box .meals-left{ font-size: 13px; color: var(--ink-soft); }
+  .modal .action-row{ display:flex; gap: 8px; margin: 16px 0; flex-wrap:wrap; }
+  .modal .action-row button{ flex:1; min-width: 120px; }
+  .modal .log-table{ width:100%; font-size: 13px; margin-top: 16px; }
+  .modal .log-table th{ font-size: 10px; padding: 6px 8px; }
+  .modal .log-table td{ padding: 6px 8px; }
+  .modal .log-table .debit{ color: var(--berry); }
+  .modal .log-table .credit{ color: var(--leaf); }
+
+  /* Form inside modal */
+  .form-group{ margin-bottom: 12px; }
+  .form-group label{ font-size: 12px; font-weight:600; display:block; margin-bottom:4px; }
 
   #dashboard{ display:none; }
 </style>
@@ -116,7 +145,7 @@
 
   <div class="eyebrow">Healthy Diet Cafe · Admin</div>
   <h1>Meal Card Dashboard</h1>
-  <div class="sub">See every subscriber and how many meals they've redeemed.</div>
+  <div class="sub">Manage customer wallets and log meals.</div>
 
   <div class="card" id="gate">
     <div class="row">
@@ -132,7 +161,7 @@
     <div class="toolbar">
       <input type="text" id="searchInput" placeholder="Search name or phone..." />
       <div class="spacer"></div>
-      <button class="btn-ghost" id="exportBtn">Export CSV</button>
+      <button class="btn-primary btn-small" id="addCustomerBtn">+ New Customer</button>
       <button class="btn-ghost" id="refreshBtn">Refresh</button>
       <button class="btn-ghost" id="signOutBtn">Sign out</button>
     </div>
@@ -143,9 +172,10 @@
           <tr>
             <th>Name</th>
             <th>Phone</th>
-            <th>Started</th>
-            <th>Progress</th>
-            <th>Last meal</th>
+            <th>DOB</th>
+            <th>Balance</th>
+            <th>Meals Left</th>
+            <th>Last Meal</th>
             <th>Status</th>
           </tr>
         </thead>
@@ -156,13 +186,116 @@
   </div>
 </div>
 
+<!-- Customer Profile Modal -->
+<div class="modal-overlay" id="profileModal">
+  <div class="modal">
+    <button class="close" onclick="closeProfile()">&times;</button>
+    <h2 id="modalName">Customer Name</h2>
+    <div class="sub" id="modalPhone">+91 XXXXXXXXXX</div>
+
+    <div class="info-grid">
+      <div class="info-item"><label>Date of Birth</label><div class="value" id="modalDob">—</div></div>
+      <div class="info-item"><label>Base Meal Price</label><div class="value" id="modalBasePrice">—</div></div>
+    </div>
+
+    <div class="wallet-box">
+      <div>
+        <div class="balance" id="modalBalance">₹0</div>
+        <div class="meals-left" id="modalMealsLeft">~0 meals left</div>
+      </div>
+      <div style="text-align:right;">
+        <div class="meals-left">Total Spent</div>
+        <div class="value" id="modalTotalSpent">₹0</div>
+      </div>
+    </div>
+
+    <div class="action-row">
+      <button class="btn-primary" onclick="openLogMealForm()">Log Meal</button>
+      <button class="btn-ghost" onclick="openTopUpForm()">Add Top-up</button>
+    </div>
+
+    <!-- Log Meal Form (hidden by default) -->
+    <div id="logMealForm" style="display:none; margin-top:16px; border-top:1px solid var(--rule); padding-top:16px;">
+      <h3 style="font-size:16px; margin:0 0 8px;">Log a Meal</h3>
+      <div class="form-group">
+        <label>Amount (₹)</label>
+        <input type="number" id="logMealAmount" value="0" step="1" min="1" />
+      </div>
+      <div class="form-group">
+        <label>Description</label>
+        <input type="text" id="logMealDesc" value="Standard Meal" />
+      </div>
+      <button class="btn-primary" onclick="submitLogMeal()">Confirm Meal</button>
+      <button class="btn-ghost" onclick="closeLogMealForm()">Cancel</button>
+      <div class="msg" id="logMealMsg"></div>
+    </div>
+
+    <!-- Top-up Form (hidden by default) -->
+    <div id="topUpForm" style="display:none; margin-top:16px; border-top:1px solid var(--rule); padding-top:16px;">
+      <h3 style="font-size:16px; margin:0 0 8px;">Add Top-up</h3>
+      <div class="form-group">
+        <label>Amount (₹)</label>
+        <input type="number" id="topUpAmount" value="1000" step="100" min="1" />
+      </div>
+      <div class="form-group">
+        <label>Description</label>
+        <input type="text" id="topUpDesc" value="Cash top-up" />
+      </div>
+      <button class="btn-primary" onclick="submitTopUp()">Confirm Top-up</button>
+      <button class="btn-ghost" onclick="closeTopUpForm()">Cancel</button>
+      <div class="msg" id="topUpMsg"></div>
+    </div>
+
+    <h3 style="font-size:16px; margin:20px 0 8px;">Transaction History</h3>
+    <table class="log-table">
+      <thead><tr><th>Date</th><th>Description</th><th>Amount</th><th>Balance</th></tr></thead>
+      <tbody id="modalLogBody"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- New Customer Modal -->
+<div class="modal-overlay" id="newCustomerModal">
+  <div class="modal">
+    <button class="close" onclick="closeNewCustomer()">&times;</button>
+    <h2>New Customer</h2>
+    <div class="sub">Create a profile and set up their wallet.</div>
+
+    <div class="form-group">
+      <label>Name</label>
+      <input type="text" id="newName" placeholder="Customer name" />
+    </div>
+    <div class="form-group">
+      <label>Phone (10 digits)</label>
+      <input type="text" id="newPhone" placeholder="9876543210" maxlength="10" />
+    </div>
+    <div class="form-group">
+      <label>Date of Birth</label>
+      <input type="date" id="newDob" />
+    </div>
+    <div class="form-group">
+      <label>Base Meal Price (₹)</label>
+      <input type="number" id="newBasePrice" placeholder="150" step="1" min="1" />
+    </div>
+    <div class="form-group">
+      <label>Initial Top-up (₹)</label>
+      <input type="number" id="newTopUp" placeholder="5000" step="100" min="0" />
+    </div>
+
+    <button class="btn-primary" onclick="submitNewCustomer()">Create Customer</button>
+    <button class="btn-ghost" onclick="closeNewCustomer()">Cancel</button>
+    <div class="msg" id="newCustomerMsg"></div>
+  </div>
+</div>
+
 <script>
   // ====== CONFIG ======
-  const API_BASE = "https://healthy-diet-cafe.jeezmanw.workers.dev"; // TODO: same Worker URL as index.html
+  const API_BASE = "https://healthy-diet-cafe.jeezmanw.workers.dev";
   const SESSION_KEY = "hdc_admin_key";
 
   const $ = (id) => document.getElementById(id);
   let allRecords = [];
+  let currentPhone = null;
 
   function fmtDate(d){
     if(!d) return "—";
@@ -172,6 +305,30 @@
 
   function todayStr(){ return new Date().toISOString().slice(0,10); }
 
+  function fmtMoney(n){
+    return "₹" + Number(n).toLocaleString("en-IN");
+  }
+
+  async function api(path, options = {}){
+    const key = sessionStorage.getItem(SESSION_KEY);
+    const url = new URL(API_BASE + path);
+    if(key && !options.noKey){
+      if(options.method === "POST"){
+        // key goes in body
+      } else {
+        url.searchParams.set("key", key);
+      }
+    }
+    const res = await fetch(url.toString(), {
+      headers: { "Content-Type": "application/json" },
+      ...options,
+    });
+    const data = await res.json();
+    if(res.status === 401) throw new Error("unauthorized");
+    return data;
+  }
+
+  // ====== DASHBOARD ======
   async function fetchDashboard(key){
     const res = await fetch(`${API_BASE}/api/admin/list?key=${encodeURIComponent(key)}`);
     if(res.status === 401) throw new Error("unauthorized");
@@ -183,8 +340,8 @@
     const cards = [
       { num: summary.totalCustomers, label: "Total customers" },
       { num: summary.mealsToday, label: "Meals served today" },
-      { num: summary.active, label: "Active subscriptions" },
-      { num: summary.completed, label: "Completed cycles" },
+      { num: summary.active, label: "Active wallets" },
+      { num: summary.lowBalance, label: "Low balance" },
     ];
     $("summaryGrid").innerHTML = cards.map(c =>
       `<div class="stat"><div class="stat-num">${c.num}</div><div class="stat-label">${c.label}</div></div>`
@@ -192,7 +349,6 @@
   }
 
   function renderTable(records){
-    const today = todayStr();
     if(records.length === 0){
       $("tbody").innerHTML = "";
       $("emptyMsg").style.display = "block";
@@ -201,29 +357,22 @@
     $("emptyMsg").style.display = "none";
 
     $("tbody").innerHTML = records.map(r => {
-      const total = r.totalDays || 26;
-      const collected = r.mealsCollected || 0;
-      const pct = Math.min(100, Math.round((collected/total)*100));
-      const complete = collected >= total;
-      const lastMeal = (r.log && r.log.length) ? r.log[r.log.length-1] : null;
-      const taggedToday = lastMeal === today;
-      const displayName = r.name && r.name.trim() ? r.name : "—";
+      const mealsLeft = r.mealsLeft || 0;
+      const low = mealsLeft > 0 && mealsLeft <= 3;
+      let statusBadge;
+      if(mealsLeft <= 0) statusBadge = '<span class="badge low">No Balance</span>';
+      else if(low) statusBadge = '<span class="badge low">Low</span>';
+      else statusBadge = '<span class="badge active">Active</span>';
+
       return `
-        <tr>
-          <td>${displayName}</td>
+        <tr onclick="openProfile('${r.phone}')">
+          <td>${r.name || "—"}</td>
           <td class="phone-cell">+91 ${r.phone}</td>
-          <td>${fmtDate(r.startDate)}</td>
-          <td>
-            <div class="bar-wrap">
-              <div class="bar-track"><div class="bar-fill ${complete ? "complete":""}" style="width:${pct}%"></div></div>
-              <div class="count-text">${collected}/${total}</div>
-            </div>
-          </td>
-          <td>${fmtDate(lastMeal)}</td>
-          <td>
-            <span class="badge ${complete ? "complete":"active"}">${complete ? "Complete" : "Active"}</span>
-            ${taggedToday ? '<span class="badge today">Today</span>' : ""}
-          </td>
+          <td>${fmtDate(r.dob)}</td>
+          <td>${fmtMoney(r.walletBalance)}</td>
+          <td>${mealsLeft}</td>
+          <td>${r.lastMealDate ? fmtDate(r.lastMealDate) : "—"}</td>
+          <td>${statusBadge}</td>
         </tr>
       `;
     }).join("");
@@ -242,23 +391,147 @@
     renderTable(filtered);
   }
 
-  function exportCSV(){
-    const rows = [["Name","Phone","Started","Meals Collected","Total Days","Last Meal","Status"]];
-    allRecords.forEach(r => {
-      const complete = (r.mealsCollected||0) >= (r.totalDays||26);
-      const lastMeal = (r.log && r.log.length) ? r.log[r.log.length-1] : "";
-      rows.push([r.name || "", r.phone, r.startDate, r.mealsCollected||0, r.totalDays||26, lastMeal, complete ? "Complete":"Active"]);
-    });
-    const csv = rows.map(row => row.map(v => `"${String(v).replace(/"/g,'""')}"`).join(",")).join("\n");
-    const blob = new Blob([csv], {type:"text/csv"});
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `healthy-diet-cafe-meals-${todayStr()}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
+  // ====== PROFILE MODAL ======
+  async function openProfile(phone){
+    currentPhone = phone;
+    const data = await api(`/api/admin/customer?phone=${phone}`);
+    if(data.error) { alert("Could not load customer"); return; }
+
+    $("modalName").textContent = data.name;
+    $("modalPhone").textContent = "+91 " + data.phone;
+    $("modalDob").textContent = data.dob ? fmtDate(data.dob) : "—";
+    $("modalBasePrice").textContent = fmtMoney(data.baseMealPrice);
+    $("modalBalance").textContent = fmtMoney(data.walletBalance);
+    $("modalMealsLeft").textContent = `~${Math.floor(data.walletBalance / data.baseMealPrice)} meals left`;
+
+    const totalSpent = data.log.filter(l => l.amount < 0).reduce((s, l) => s + Math.abs(l.amount), 0);
+    $("modalTotalSpent").textContent = fmtMoney(totalSpent);
+
+    $("logMealAmount").value = data.baseMealPrice;
+    $("logMealDesc").value = "Standard Meal";
+    $("topUpAmount").value = 1000;
+    $("topUpDesc").value = "Cash top-up";
+    $("logMealMsg").textContent = "";
+    $("topUpMsg").textContent = "";
+
+    // Render transaction history (newest first)
+    const log = [...(data.log || [])].reverse();
+    $("modalLogBody").innerHTML = log.map(l => {
+      const isDebit = l.amount < 0;
+      return `
+        <tr>
+          <td>${fmtDate(l.date)}</td>
+          <td>${l.description || "—"}</td>
+          <td class="${isDebit ? "debit" : "credit"}">${isDebit ? "-" : "+"}${fmtMoney(Math.abs(l.amount))}</td>
+          <td>${fmtMoney(l.balanceAfter)}</td>
+        </tr>
+      `;
+    }).join("") || '<tr><td colspan="4" style="text-align:center; color:var(--ink-soft);">No transactions yet.</td></tr>';
+
+    $("profileModal").classList.add("open");
+    $("logMealForm").style.display = "none";
+    $("topUpForm").style.display = "none";
   }
 
+  function closeProfile(){
+    $("profileModal").classList.remove("open");
+    currentPhone = null;
+    // Refresh dashboard
+    const key = sessionStorage.getItem(SESSION_KEY);
+    if(key) loadDashboard(key);
+  }
+
+  function openLogMealForm(){
+    $("logMealForm").style.display = "block";
+    $("topUpForm").style.display = "none";
+  }
+  function closeLogMealForm(){ $("logMealForm").style.display = "none"; }
+
+  function openTopUpForm(){
+    $("topUpForm").style.display = "block";
+    $("logMealForm").style.display = "none";
+  }
+  function closeTopUpForm(){ $("topUpForm").style.display = "none"; }
+
+  async function submitLogMeal(){
+    const amount = Number($("logMealAmount").value);
+    const description = $("logMealDesc").value.trim();
+    if(!amount || amount <= 0){ $("logMealMsg").textContent = "Enter a valid amount."; return; }
+
+    $("logMealMsg").textContent = "Logging...";
+    const key = sessionStorage.getItem(SESSION_KEY);
+    const res = await fetch(`${API_BASE}/api/admin/log-meal`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ key, phone: currentPhone, amount, description }),
+    });
+    const data = await res.json();
+    if(data.error){
+      $("logMealMsg").textContent = data.error === "insufficient_balance" ? "Insufficient balance." : "Error: " + data.error;
+      $("logMealMsg").className = "msg err";
+      return;
+    }
+    $("logMealMsg").textContent = "Meal logged!";
+    $("logMealMsg").className = "msg ok";
+    setTimeout(() => { closeProfile(); }, 800);
+  }
+
+  async function submitTopUp(){
+    const amount = Number($("topUpAmount").value);
+    const description = $("topUpDesc").value.trim();
+    if(!amount || amount <= 0){ $("topUpMsg").textContent = "Enter a valid amount."; return; }
+
+    $("topUpMsg").textContent = "Adding...";
+    const key = sessionStorage.getItem(SESSION_KEY);
+    const res = await fetch(`${API_BASE}/api/admin/top-up`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ key, phone: currentPhone, amount, description }),
+    });
+    const data = await res.json();
+    if(data.error){
+      $("topUpMsg").textContent = "Error: " + data.error;
+      $("topUpMsg").className = "msg err";
+      return;
+    }
+    $("topUpMsg").textContent = "Top-up added!";
+    $("topUpMsg").className = "msg ok";
+    setTimeout(() => { closeProfile(); }, 800);
+  }
+
+  // ====== NEW CUSTOMER MODAL ======
+  function openNewCustomer(){ $("newCustomerModal").classList.add("open"); }
+  function closeNewCustomer(){ $("newCustomerModal").classList.remove("open"); }
+
+  async function submitNewCustomer(){
+    const name = $("newName").value.trim();
+    const phone = $("newPhone").value.trim();
+    const dob = $("newDob").value;
+    const baseMealPrice = Number($("newBasePrice").value);
+    const initialTopUp = Number($("newTopUp").value) || 0;
+
+    if(!name || phone.length !== 10 || !baseMealPrice){
+      $("newCustomerMsg").textContent = "Please fill all required fields correctly.";
+      return;
+    }
+
+    $("newCustomerMsg").textContent = "Creating...";
+    const key = sessionStorage.getItem(SESSION_KEY);
+    const res = await fetch(`${API_BASE}/api/admin/create`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ key, name, phone, dob, baseMealPrice, initialTopUp }),
+    });
+    const data = await res.json();
+    if(data.error){
+      $("newCustomerMsg").textContent = data.error === "customer_already_exists" ? "A customer with this phone already exists." : "Error: " + data.error;
+      return;
+    }
+    $("newCustomerMsg").textContent = "Customer created!";
+    setTimeout(() => { closeNewCustomer(); loadDashboard(key); }, 800);
+  }
+
+  // ====== AUTH & INIT ======
   async function loadDashboard(key){
     $("gateMsg").textContent = "";
     try{
@@ -289,7 +562,6 @@
   });
 
   $("searchInput").addEventListener("input", applyFilter);
-  $("exportBtn").addEventListener("click", exportCSV);
   $("refreshBtn").addEventListener("click", () => {
     const key = sessionStorage.getItem(SESSION_KEY);
     if(key) loadDashboard(key);
@@ -300,6 +572,7 @@
     $("gate").style.display = "block";
     $("keyInput").value = "";
   });
+  $("addCustomerBtn").addEventListener("click", openNewCustomer);
 
   // Auto-load if key already in this browser tab's session
   const savedKey = sessionStorage.getItem(SESSION_KEY);
