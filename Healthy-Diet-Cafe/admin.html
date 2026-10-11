@@ -88,6 +88,14 @@
   .schedule-item label { width: 40px; font-size: 12px; font-weight: 600; }
   .schedule-item select { padding: 6px 8px; font-size: 13px; }
   
+  /* View Schedule Read-Only */
+  .view-schedule-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-top: 10px; }
+  .view-schedule-item { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: #F4F6EE; border-radius: 8px; font-size: 13px; }
+  .view-schedule-item .day { font-weight: 600; color: var(--ink-soft); }
+  .view-schedule-item .meal { font-weight: 600; color: var(--leaf); }
+  .view-schedule-item .meal.off { color: var(--berry); }
+  .view-schedule-item .meal.empty { color: var(--ink-soft); font-style: italic; font-weight: normal; }
+  
   #dashboard{ display:none; }
 </style>
 </head>
@@ -120,6 +128,7 @@
         <option value="all">All Slots</option>
         <option value="Lunch">Lunch</option>
         <option value="Dinner">Dinner</option>
+        <option value="Both">Both</option>
       </select>
       <div class="spacer"></div>
       <button class="btn-ghost" id="exportBtn">Export CSV</button>
@@ -171,6 +180,13 @@
         <div class="meals-left">Total Spent</div>
         <div class="value" id="modalTotalSpent">₹0</div>
       </div>
+    </div>
+
+    <!-- READ-ONLY WEEKLY SCHEDULE FOR STAFF -->
+    <div id="viewScheduleSection" style="display:none; margin: 16px 0; border-top: 1px solid var(--rule); padding-top: 16px;">
+      <h3 style="font-size:16px; margin:0 0 4px;">Weekly Meal Schedule</h3>
+      <div class="sub" style="margin-bottom: 10px;">What the customer has opted for this week.</div>
+      <div class="view-schedule-grid" id="viewScheduleGrid"></div>
     </div>
 
     <div class="action-row">
@@ -240,6 +256,7 @@
           <option value="">Select Slot</option>
           <option value="Lunch">Lunch</option>
           <option value="Dinner">Dinner</option>
+          <option value="Both">Both</option>
         </select>
       </div>
       
@@ -309,6 +326,7 @@
         <option value="">Select Slot</option>
         <option value="Lunch">Lunch</option>
         <option value="Dinner">Dinner</option>
+        <option value="Both">Both</option>
       </select>
     </div>
 
@@ -339,6 +357,7 @@
   let allRecords = [];
   let currentPhone = null;
   const DAYS = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
+  const DAY_NAMES = { mon: 'Monday', tue: 'Tuesday', wed: 'Wednesday', thu: 'Thursday', fri: 'Friday', sat: 'Saturday', sun: 'Sunday' };
   const MEAL_OPTIONS = ["", "Veg", "Non-Veg", "Egg", "Special", "Off"];
 
   // --- SECURITY ---
@@ -373,6 +392,29 @@
       if (!select) return;
       select.innerHTML = MEAL_OPTIONS.map(opt => `<option value="${opt}">${opt || "Select"}</option>`).join("");
     });
+  }
+
+  // --- RENDER VIEW SCHEDULE (Read-only) ---
+  function renderViewSchedule(schedule) {
+    if (!schedule || Object.keys(schedule).length === 0) {
+      $("viewScheduleGrid").innerHTML = '<div style="grid-column: span 2; text-align:center; color:var(--ink-soft); font-size:13px;">No schedule set for this customer.</div>';
+      return;
+    }
+    
+    let html = "";
+    DAYS.forEach(day => {
+      const meal = schedule[day] || "";
+      const mealClass = meal === "Off" ? "meal off" : (meal ? "meal" : "meal empty");
+      const mealText = meal || "Not set";
+      
+      html += `
+        <div class="view-schedule-item">
+          <span class="day">${DAY_NAMES[day]}</span>
+          <span class="${mealClass}">${mealText}</span>
+        </div>
+      `;
+    });
+    $("viewScheduleGrid").innerHTML = html;
   }
 
   // --- FILTERS ---
@@ -467,6 +509,14 @@
     $("modalType").textContent = data.customerType || "Dine-in";
     $("modalSlot").textContent = data.deliverySlot || "—";
 
+    // Show/hide view schedule section
+    if (data.customerType === "Home Delivery") {
+      $("viewScheduleSection").style.display = "block";
+      renderViewSchedule(data.weeklySchedule);
+    } else {
+      $("viewScheduleSection").style.display = "none";
+    }
+
     const totalSpent = data.log.filter(l => l.amount < 0).reduce((s, l) => s + Math.abs(l.amount), 0);
     $("modalTotalSpent").textContent = fmtMoney(totalSpent);
 
@@ -492,7 +542,7 @@
     $("editSlot").value = data.deliverySlot || "";
     toggleEditSlot();
 
-    // Populate weekly schedule
+    // Populate weekly schedule for edit form
     populateScheduleDropdowns('edit');
     DAYS.forEach(day => {
       if (data.weeklySchedule && data.weeklySchedule[day]) {
