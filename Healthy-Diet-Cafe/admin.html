@@ -817,7 +817,11 @@
       sessionStorage.setItem(SESSION_KEY, key);
       allRecords = data.records || [];
       renderSummary(data.summary || {});
-      renderTable(allRecords);
+      
+      // FIX: Call applyFilter() instead of renderTable(allRecords) 
+      // This ensures the currently active Type/Slot/Search filters are respected.
+      applyFilter(); 
+      
       $("gate").style.display = "none";
       $("dashboard").style.display = "block";
     }catch(e){
