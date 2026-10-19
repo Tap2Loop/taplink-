@@ -437,7 +437,12 @@
     return dt.toLocaleDateString("en-IN", { day:"numeric", month:"short" });
   }
 
-  function todayStr(){ return new Date().toISOString().slice(0,10); }
+  // FIXED: Force IST (UTC + 5.5 hours) for accurate daily logging
+  function todayStr(){ 
+    const now = new Date();
+    const istDate = new Date(now.getTime() + (5.5 * 60 * 60 * 1000));
+    return istDate.toISOString().slice(0,10); 
+  }
 
   function fmtMoney(n){
     return "₹" + safeNum(n).toLocaleString("en-IN");
