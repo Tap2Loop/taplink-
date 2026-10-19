@@ -35,12 +35,25 @@
   .btn-small{ padding: 6px 10px; font-size: 12px; border-radius: 8px; }
   .msg.err{ color: var(--berry); font-size:13px; margin-top:8px; }
   .msg.ok{ color: var(--leaf); font-size:13px; margin-top:8px; }
-  .summary-grid{ display:grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 18px; }
+  
+  /* Summary Grids */
+  .summary-grid{ display:grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 12px; }
   @media (max-width: 640px){ .summary-grid{ grid-template-columns: repeat(2, 1fr); } }
   .stat{ background: var(--bg-card); border:1px solid var(--rule); border-radius: 14px; padding: 16px; }
   .stat-num{ font-family:'Fraunces', serif; font-size: 26px; font-weight:600; }
   .stat-label{ font-size: 12px; color: var(--ink-soft); margin-top:2px; }
   
+  /* Monthly Overview Banner */
+  .monthly-banner {
+    background: #F4F6EE; border: 1px solid var(--leaf); border-radius: var(--radius);
+    padding: 16px 22px; margin-bottom: 18px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;
+  }
+  .monthly-title { font-family: 'Fraunces', serif; font-size: 18px; font-weight: 600; color: var(--leaf); }
+  .monthly-stats { display: flex; gap: 32px; }
+  .m-stat { display: flex; flex-direction: column; }
+  .m-stat-val { font-family: 'Fraunces', serif; font-size: 22px; font-weight: 600; }
+  .m-stat-lbl { font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--ink-soft); }
+
   .toolbar{ display:flex; gap:8px; align-items:center; margin-bottom: 14px; flex-wrap:wrap; }
   .toolbar input[type="text"]{ flex:1; min-width: 160px; }
   .toolbar select { width: auto; padding: 8px 12px; font-size: 13px; }
@@ -116,7 +129,31 @@
   </div>
 
   <div id="dashboard">
+    
+    <!-- Top Row: Overall Stats -->
     <div class="summary-grid" id="summaryGrid"></div>
+    
+    <!-- Second Row: Monthly Revenue Banner -->
+    <div class="monthly-banner">
+      <div>
+        <div class="monthly-title" id="monthlyTitle">This Month</div>
+        <div style="font-size:12px; color:var(--ink-soft); margin-top:2px;">Based on meals logged & top-ups collected</div>
+      </div>
+      <div class="monthly-stats">
+        <div class="m-stat">
+          <span class="m-stat-val" id="mMealsServed">0</span>
+          <span class="m-stat-lbl">Meals Served</span>
+        </div>
+        <div class="m-stat">
+          <span class="m-stat-val" id="mMealRevenue">₹0</span>
+          <span class="m-stat-lbl">Meal Revenue</span>
+        </div>
+        <div class="m-stat">
+          <span class="m-stat-val" id="mTopUps">₹0</span>
+          <span class="m-stat-lbl">Total Top-ups</span>
+        </div>
+      </div>
+    </div>
 
     <div class="toolbar">
       <input type="text" id="searchInput" placeholder="Search name or phone..." />
@@ -456,6 +493,7 @@
     $("viewScheduleGrid").innerHTML = html;
   }
 
+  // --- FILTERS ---
   function applyFilter(){
     const raw = $("searchInput").value.trim();
     const typeFilter = $("typeFilter").value;
@@ -491,6 +529,7 @@
     applyFilter();
   }
 
+  // --- RENDER TABLE ---
   function renderTable(records){
     if(records.length === 0){
       $("tbody").innerHTML = "";
@@ -534,6 +573,38 @@
     }).join("");
   }
 
+  // --- MONTHLY CALCULATIONS ---
+  function renderMonthlyStats(records) {
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+    const monthName = now.toLocaleDateString("en-IN", { month: 'long', year: 'numeric' });
+
+    let mealsServed = 0;
+    let mealRevenue = 0;
+    let totalTopUps = 0;
+
+    records.forEach(r => {
+      (r.log || []).forEach(l => {
+        const logDate = new Date(l.date + "T00:00:00");
+        if (logDate.getMonth() === currentMonth && logDate.getFullYear() === currentYear) {
+          if (l.amount < 0) {
+            mealsServed++;
+            mealRevenue += Math.abs(l.amount);
+          } else if (l.amount > 0 && l.description !== "Initial Top-up") {
+            totalTopUps += l.amount; 
+          }
+        }
+      });
+    });
+
+    $("monthlyTitle").textContent = `Overview: ${monthName}`;
+    $("mMealsServed").textContent = mealsServed;
+    $("mMealRevenue").textContent = fmtMoney(mealRevenue);
+    $("mTopUps").textContent = fmtMoney(totalTopUps);
+  }
+
+  // --- PROFILE MODAL ---
   async function openProfile(phone){
     currentPhone = phone;
     const data = await api(`/api/admin/customer?phone=${phone}`);
@@ -898,23 +969,21 @@
       return;
     }
     
-    const today = new Date().getDay();
+    const today = new Date();
     const dayKeys = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
-    const todayKey = dayKeys[today];
-    const todayDate = todayStr();
+    const todayKey = dayKeys[today.getDay()];
+    
+    // Format Date as "Monday, 19 Oct 2026"
+    const dateString = today.toLocaleDateString("en-IN", { weekday: 'long', year: 'numeric', month: 'short', day: 'numeric' });
     
     // Array to hold individual line items for delivery
     let deliveries = [];
 
     allRecords.forEach(r => {
-      // 1. Skip paused customers
       if (r.isPaused) return; 
 
-      // 2. Only process Home Delivery customers
       if (r.customerType === "Home Delivery") {
         const meal = r.weeklySchedule ? r.weeklySchedule[todayKey] : "";
-        
-        // 3. Only add if they actually have a meal scheduled for today
         if (meal && meal !== "Off" && meal !== "") {
           deliveries.push({
             slot: r.deliverySlot || "Both",
@@ -928,7 +997,7 @@
     });
 
     if (deliveries.length === 0) {
-      alert("No Home Delivery meals scheduled for today.");
+      alert(`No Home Delivery meals scheduled for ${dateString}.`);
       return;
     }
 
@@ -939,7 +1008,7 @@
     // Construct HTML Table
     let html = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
     <head><meta charset="UTF-8"></head><body>
-    <h2>Home Delivery List - ${todayDate}</h2>
+    <h2>Home Delivery List - ${dateString}</h2>
     <table border="1" cellspacing="0" cellpadding="5">
       <thead>
         <tr style="background-color: #EFF3EA; font-weight: bold;">
@@ -965,7 +1034,7 @@
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `delivery-list-${todayDate}.xls`;
+    a.download = `delivery-list-${todayKey}-${todayStr()}.xls`;
     a.click();
     URL.revokeObjectURL(url);
   }
@@ -996,6 +1065,7 @@
       sessionStorage.setItem(SESSION_KEY, key);
       allRecords = data.records || [];
       renderSummary(data.summary || {});
+      renderMonthlyStats(allRecords);
       applyFilter(); 
       $("gate").style.display = "none";
       $("dashboard").style.display = "block";
