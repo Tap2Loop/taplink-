@@ -58,6 +58,7 @@
   .badge.low{ background: rgba(161,61,99,0.12); color: var(--berry); }
   .badge.delivery { background: rgba(217,164,65,0.2); color: #8a6b1f; }
   .badge.dinein { background: rgba(76,122,82,0.15); color: var(--leaf); }
+  .badge.paused { background: #ccc; color: #444; }
   
   .empty{ text-align:center; color: var(--ink-soft); font-size: 13px; padding: 24px 0; }
   .modal-overlay{ display:none; position:fixed; top:0; left:0; width:100%; height:100%; background: rgba(34,51,38,0.5); z-index: 1000; justify-content:center; align-items:center; }
@@ -131,6 +132,7 @@
         <option value="Both">Both</option>
       </select>
       <div class="spacer"></div>
+      <button class="btn-ghost" id="prepCsvBtn" style="background:#D9A441; color:#fff;">Daily Prep CSV</button>
       <button class="btn-ghost" id="exportBtn">Export CSV</button>
       <button class="btn-primary btn-small" id="addCustomerBtn">+ New Customer</button>
       <button class="btn-ghost" id="refreshBtn">Refresh</button>
@@ -171,7 +173,7 @@
       <div class="info-item"><label>Delivery Slot</label><div class="value" id="modalSlot">—</div></div>
     </div>
 
-    <div class="wallet-box">
+    <div class="wallet-box" id="modalWalletBox">
       <div>
         <div class="balance" id="modalBalance">₹0</div>
         <div class="meals-left" id="modalMealsLeft">~0 meals left</div>
@@ -182,6 +184,11 @@
       </div>
     </div>
 
+    <!-- PAUSED BANNER -->
+    <div id="pausedBanner" style="display:none; background:rgba(161,61,99,0.1); border:1px solid rgba(161,61,99,0.3); color:var(--berry); border-radius:12px; padding:12px; margin-bottom:16px; font-weight:600; text-align:center;">
+      Subscription Paused
+    </div>
+
     <!-- READ-ONLY WEEKLY SCHEDULE FOR STAFF -->
     <div id="viewScheduleSection" style="display:none; margin: 16px 0; border-top: 1px solid var(--rule); padding-top: 16px;">
       <h3 style="font-size:16px; margin:0 0 4px;">Weekly Meal Schedule</h3>
@@ -190,9 +197,10 @@
     </div>
 
     <div class="action-row">
-      <button class="btn-primary" onclick="openLogMealForm()">Log Meal</button>
+      <button class="btn-primary" onclick="openLogMealForm()" id="logMealMainBtn">Log Meal</button>
       <button class="btn-ghost" onclick="openTopUpForm()">Add Top-up</button>
       <button class="btn-ghost" onclick="openEditProfileForm()">Edit Profile</button>
+      <button class="btn-ghost" id="pauseBtn" onclick="togglePause()">Pause</button>
       <button class="btn-ghost" style="color: var(--berry);" onclick="deleteProfile()">Delete</button>
     </div>
 
@@ -204,8 +212,11 @@
         <input type="number" id="logMealAmount" value="0" step="1" min="1" />
       </div>
       <div class="form-group">
-        <label>Description</label>
-        <input type="text" id="logMealDesc" value="Standard Meal" />
+        <label>Description / Meal Type</label>
+        <input type="text" id="logMealDesc" list="mealOptionsList" value="Standard Meal" />
+        <datalist id="mealOptionsList">
+          <!-- Populated via JS -->
+        </datalist>
       </div>
       <button class="btn-primary" onclick="submitLogMeal()" id="logMealBtn">Confirm Meal</button>
       <button class="btn-ghost" onclick="closeLogMealForm()">Cancel</button>
@@ -358,7 +369,14 @@
   let currentPhone = null;
   const DAYS = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
   const DAY_NAMES = { mon: 'Monday', tue: 'Tuesday', wed: 'Wednesday', thu: 'Thursday', fri: 'Friday', sat: 'Saturday', sun: 'Sunday' };
-  const MEAL_OPTIONS = ["", "Veg", "Non-Veg", "Egg", "Special", "Off"];
+  
+  // NEW: Expanded Meal Options
+  const MEAL_OPTIONS = [
+    "", 
+    "30g Veg", "45g Veg", "60g Veg", 
+    "30g Non-Veg", "45g Non-Veg", "60g Non-Veg", 
+    "Egg", "Special", "Off"
+  ];
 
   // --- SECURITY ---
   function escapeHtml(str) {
@@ -385,7 +403,14 @@
     return "₹" + safeNum(n).toLocaleString("en-IN");
   }
 
-  // --- POPULATE SCHEDULE DROPDOWNS ---
+  // --- POPULATE MEAL OPTIONS ---
+  function populateMealOptions() {
+    const datalist = $("mealOptionsList");
+    if (datalist) {
+      datalist.innerHTML = MEAL_OPTIONS.filter(o => o !== "").map(opt => `<option value="${opt}">`).join("");
+    }
+  }
+
   function populateScheduleDropdowns(prefix) {
     DAYS.forEach(day => {
       const select = $(`${prefix}-sched-${day}`);
@@ -466,9 +491,16 @@
       const mealsLeft = safeNum(r.mealsLeft);
       const low = mealsLeft > 0 && mealsLeft <= 3;
       let statusBadge;
-      if(mealsLeft <= 0) statusBadge = '<span class="badge low">No Balance</span>';
-      else if(low) statusBadge = '<span class="badge low">Low</span>';
-      else statusBadge = '<span class="badge active">Active</span>';
+      
+      if (r.isPaused) {
+        statusBadge = '<span class="badge paused">Paused</span>';
+      } else if (mealsLeft <= 0) {
+        statusBadge = '<span class="badge low">No Balance</span>';
+      } else if (low) {
+        statusBadge = '<span class="badge low">Low</span>';
+      } else {
+        statusBadge = '<span class="badge active">Active</span>';
+      }
 
       const type = r.customerType || "Dine-in";
       const slot = r.deliverySlot ? ` (${r.deliverySlot})` : "";
@@ -509,6 +541,24 @@
     $("modalType").textContent = data.customerType || "Dine-in";
     $("modalSlot").textContent = data.deliverySlot || "—";
 
+    // Handle Pause State
+    const isPaused = Boolean(data.isPaused);
+    $("pausedBanner").style.display = isPaused ? "block" : "none";
+    $("modalWalletBox").style.opacity = isPaused ? "0.5" : "1";
+    $("pauseBtn").textContent = isPaused ? "Resume" : "Pause";
+    $("pauseBtn").style.color = isPaused ? "var(--leaf)" : "var(--ink)";
+    
+    // Disable log meal if paused
+    if (isPaused) {
+      $("logMealMainBtn").disabled = true;
+      $("logMealMainBtn").textContent = "Paused";
+      $("logMealMainBtn").style.opacity = "0.5";
+    } else {
+      $("logMealMainBtn").disabled = false;
+      $("logMealMainBtn").textContent = "Log Meal";
+      $("logMealMainBtn").style.opacity = "1";
+    }
+
     // Show/hide view schedule section
     if (data.customerType === "Home Delivery") {
       $("viewScheduleSection").style.display = "block";
@@ -524,12 +574,12 @@
     $("logMealAmount").value = basePrice || 0;
     
     // Auto-fill meal description based on today's schedule
-    const today = new Date().getDay(); // 0 = Sun, 1 = Mon...
+    const today = new Date().getDay();
     const dayKeys = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
     const todayKey = dayKeys[today];
     let defaultDesc = "Standard Meal";
-    if (data.weeklySchedule && data.weeklySchedule[todayKey]) {
-      defaultDesc = data.weeklySchedule[todayKey] + " Meal";
+    if (data.weeklySchedule && data.weeklySchedule[todayKey] && data.weeklySchedule[todayKey] !== "Off") {
+      defaultDesc = data.weeklySchedule[todayKey];
     }
     $("logMealDesc").value = defaultDesc;
 
@@ -585,7 +635,10 @@
   }
 
   // --- FORM TOGGLES ---
-  function openLogMealForm(){ closeAllForms(); $("logMealForm").style.display = "block"; }
+  function openLogMealForm(){ 
+    if ($("logMealMainBtn").disabled) return;
+    closeAllForms(); $("logMealForm").style.display = "block"; 
+  }
   function closeLogMealForm(){ $("logMealForm").style.display = "none"; }
   function openTopUpForm(){ closeAllForms(); $("topUpForm").style.display = "block"; }
   function closeTopUpForm(){ $("topUpForm").style.display = "none"; }
@@ -602,6 +655,29 @@
     const isDelivery = $("newType").value === "Home Delivery";
     $("newSlotGroup").style.display = isDelivery ? "block" : "none";
     $("newScheduleSection").style.display = isDelivery ? "block" : "none";
+  }
+
+  // --- PAUSE / RESUME ACTION ---
+  async function togglePause() {
+    const isCurrentlyPaused = $("pauseBtn").textContent === "Resume";
+    const newPauseState = !isCurrentlyPaused;
+    
+    $("pauseBtn").disabled = true;
+    const key = sessionStorage.getItem(SESSION_KEY);
+    const res = await fetch(`${API_BASE}/api/admin/edit`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ key, phone: currentPhone, isPaused: newPauseState }),
+    });
+    const data = await res.json();
+    $("pauseBtn").disabled = false;
+    
+    if(data.error) {
+      alert("Error updating status: " + data.error);
+      return;
+    }
+    // Reload profile to reflect changes
+    openProfile(currentPhone);
   }
 
   // --- ACTIONS ---
@@ -764,7 +840,7 @@
     setTimeout(() => { closeNewCustomer(); loadDashboard(key); }, 800);
   }
 
-  // --- EXPORT CSV ---
+  // --- EXPORT CSV (General) ---
   function exportCSV(){
     if(!allRecords || allRecords.length === 0){
       alert("No customer data to export.");
@@ -773,7 +849,7 @@
     const rows = [["Name","Phone","DOB","Type","Slot","Wallet Balance","Base Meal Price","Meals Left","Total Spent","Last Meal Date","Status"]];
     allRecords.forEach(r => {
       const mealsLeft = safeNum(r.mealsLeft);
-      const status = mealsLeft <= 0 ? "No Balance" : (mealsLeft <= 3 ? "Low" : "Active");
+      const status = r.isPaused ? "Paused" : (mealsLeft <= 0 ? "No Balance" : (mealsLeft <= 3 ? "Low" : "Active"));
       rows.push([
         r.name || "—", r.phone, r.dob || "—", r.customerType || "Dine-in", r.deliverySlot || "—",
         safeNum(r.walletBalance), safeNum(r.baseMealPrice), mealsLeft, safeNum(r.totalSpent),
@@ -786,6 +862,73 @@
     const a = document.createElement("a");
     a.href = url;
     a.download = `healthy-diet-cafe-export-${todayStr()}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  // --- DAILY PREP CSV (Kitchen List) ---
+  function exportPrepCSV() {
+    if(!allRecords || allRecords.length === 0) {
+      alert("No customer data to generate prep list.");
+      return;
+    }
+    
+    const today = new Date().getDay();
+    const dayKeys = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
+    const todayKey = dayKeys[today];
+    const todayDate = todayStr();
+    
+    // Tally for Home Delivery
+    const deliveryTally = { Lunch: {}, Dinner: {}, Both: {} };
+    // Tally for Dine-in (based on what was actually logged today)
+    const dineInTally = {};
+
+    allRecords.forEach(r => {
+      if (r.isPaused) return; // Skip paused customers
+
+      if (r.customerType === "Home Delivery") {
+        const meal = r.weeklySchedule ? r.weeklySchedule[todayKey] : "";
+        if (meal && meal !== "Off" && meal !== "") {
+          const slot = r.deliverySlot || "Both";
+          const targetTally = deliveryTally[slot] || deliveryTally["Both"];
+          targetTally[meal] = (targetTally[meal] || 0) + 1;
+        }
+      } else {
+        // Dine-in: tally actual logs for today
+        const todayLogs = r.log.filter(l => l.date === todayDate && l.amount < 0);
+        todayLogs.forEach(l => {
+          const meal = l.description || "Standard Meal";
+          dineInTally[meal] = (dineInTally[meal] || 0) + 1;
+        });
+      }
+    });
+
+    // Build CSV
+    let rows = [["Slot", "Meal Type", "Quantity"]];
+    
+    // Add Home Delivery (Expected)
+    ["Lunch", "Dinner", "Both"].forEach(slot => {
+      Object.keys(deliveryTally[slot]).forEach(meal => {
+        rows.push([`Home Delivery - ${slot}`, meal, deliveryTally[slot][meal]]);
+      });
+    });
+    
+    // Add Dine-in (Actual Logged)
+    Object.keys(dineInTally).forEach(meal => {
+      rows.push(["Dine-in (Logged)", meal, dineInTally[meal]]);
+    });
+
+    if (rows.length === 1) {
+      alert("No meals scheduled or logged for today yet.");
+      return;
+    }
+
+    const csvContent = rows.map(row => row.map(v => `"${String(v).replace(/"/g,'""')}"`).join(",")).join("\n");
+    const blob = new Blob([csvContent], {type:"text/csv;charset=utf-8;"});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `cafe-prep-list-${todayDate}.csv`;
     a.click();
     URL.revokeObjectURL(url);
   }
@@ -817,11 +960,7 @@
       sessionStorage.setItem(SESSION_KEY, key);
       allRecords = data.records || [];
       renderSummary(data.summary || {});
-      
-      // FIX: Call applyFilter() instead of renderTable(allRecords) 
-      // This ensures the currently active Type/Slot/Search filters are respected.
       applyFilter(); 
-      
       $("gate").style.display = "none";
       $("dashboard").style.display = "block";
     }catch(e){
@@ -860,6 +999,7 @@
   $("typeFilter").addEventListener("change", toggleSlotFilter);
   $("slotFilter").addEventListener("change", applyFilter);
   $("exportBtn").addEventListener("click", exportCSV);
+  $("prepCsvBtn").addEventListener("click", exportPrepCSV);
   $("refreshBtn").addEventListener("click", () => {
     const key = sessionStorage.getItem(SESSION_KEY);
     if(key) loadDashboard(key);
@@ -871,6 +1011,9 @@
     $("keyInput").value = "";
   });
   $("addCustomerBtn").addEventListener("click", openNewCustomer);
+
+  // Init on load
+  populateMealOptions();
 
   const savedKey = sessionStorage.getItem(SESSION_KEY);
   if(savedKey){ $("keyInput").value = savedKey; loadDashboard(savedKey); }
