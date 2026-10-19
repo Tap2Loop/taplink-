@@ -132,8 +132,8 @@
         <option value="Both">Both</option>
       </select>
       <div class="spacer"></div>
-      <button class="btn-ghost" id="prepCsvBtn" style="background:#D9A441; color:#fff;">Daily Prep CSV</button>
-      <button class="btn-ghost" id="exportBtn">Export CSV</button>
+      <button class="btn-ghost" id="prepCsvBtn" style="background:#D9A441; color:#fff;">Daily Prep Sheet</button>
+      <button class="btn-ghost" id="exportBtn">Export Full Data</button>
       <button class="btn-primary btn-small" id="addCustomerBtn">+ New Customer</button>
       <button class="btn-ghost" id="refreshBtn">Refresh</button>
       <button class="btn-ghost" id="signOutBtn">Sign out</button>
@@ -165,6 +165,10 @@
     <button class="close" onclick="closeProfile()">&times;</button>
     <h2 id="modalName">Customer Name</h2>
     <div class="sub" id="modalPhone">+91 XXXXXXXXXX</div>
+    
+    <div style="font-size:14px; margin-bottom:16px; color:var(--ink-soft);" id="modalAddressContainer">
+      <span style="font-weight:600; color:var(--ink);">Address:</span> <span id="modalAddress">—</span>
+    </div>
 
     <div class="info-grid">
       <div class="info-item"><label>Date of Birth</label><div class="value" id="modalDob">—</div></div>
@@ -214,9 +218,7 @@
       <div class="form-group">
         <label>Description / Meal Type</label>
         <input type="text" id="logMealDesc" list="mealOptionsList" value="Standard Meal" />
-        <datalist id="mealOptionsList">
-          <!-- Populated via JS -->
-        </datalist>
+        <datalist id="mealOptionsList"></datalist>
       </div>
       <button class="btn-primary" onclick="submitLogMeal()" id="logMealBtn">Confirm Meal</button>
       <button class="btn-ghost" onclick="closeLogMealForm()">Cancel</button>
@@ -249,6 +251,10 @@
       <div class="form-group">
         <label>Date of Birth</label>
         <input type="date" id="editDob" />
+      </div>
+      <div class="form-group">
+        <label>Address</label>
+        <input type="text" id="editAddress" placeholder="Full delivery address" />
       </div>
       <div class="form-group">
         <label>Base Meal Price (₹)</label>
@@ -313,6 +319,10 @@
       <input type="text" id="newPhone" placeholder="9876543210" maxlength="10" />
     </div>
     <div class="form-group">
+      <label>Address</label>
+      <input type="text" id="newAddress" placeholder="Full delivery address" />
+    </div>
+    <div class="form-group">
       <label>Date of Birth</label>
       <input type="date" id="newDob" />
     </div>
@@ -369,14 +379,7 @@
   let currentPhone = null;
   const DAYS = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
   const DAY_NAMES = { mon: 'Monday', tue: 'Tuesday', wed: 'Wednesday', thu: 'Thursday', fri: 'Friday', sat: 'Saturday', sun: 'Sunday' };
-  
-  // NEW: Expanded Meal Options
-  const MEAL_OPTIONS = [
-    "", 
-    "30g Veg", "45g Veg", "60g Veg", 
-    "30g Non-Veg", "45g Non-Veg", "60g Non-Veg", 
-    "Egg", "Special", "Off"
-  ];
+  const MEAL_OPTIONS = ["", "30g Veg", "45g Veg", "60g Veg", "30g Non-Veg", "45g Non-Veg", "60g Non-Veg", "Egg", "Special", "Off"];
 
   // --- SECURITY ---
   function escapeHtml(str) {
@@ -403,7 +406,21 @@
     return "₹" + safeNum(n).toLocaleString("en-IN");
   }
 
-  // --- POPULATE MEAL OPTIONS ---
+  // --- HELPER: Determine Veg/Non-Veg for Color Coding ---
+  function getDietaryStyle(mealText) {
+    if (!mealText) return "";
+    const text = mealText.toLowerCase();
+    // If it explicitly says non-veg, or contains common non-veg words
+    if (text.includes("non-veg") || text.includes("chicken") || text.includes("mutton") || text.includes("fish") || text.includes("egg")) {
+      return "background-color: #f8d7da; color: #721c24;"; // Red/Pink for Non-Veg
+    }
+    // If it says veg, or contains common veg words
+    if (text.includes("veg") || text.includes("paneer") || text.includes("dal") || text.includes("salad")) {
+      return "background-color: #d4edda; color: #155724;"; // Green for Veg
+    }
+    return "";
+  }
+
   function populateMealOptions() {
     const datalist = $("mealOptionsList");
     if (datalist) {
@@ -419,7 +436,6 @@
     });
   }
 
-  // --- RENDER VIEW SCHEDULE (Read-only) ---
   function renderViewSchedule(schedule) {
     if (!schedule || Object.keys(schedule).length === 0) {
       $("viewScheduleGrid").innerHTML = '<div style="grid-column: span 2; text-align:center; color:var(--ink-soft); font-size:13px;">No schedule set for this customer.</div>';
@@ -442,7 +458,6 @@
     $("viewScheduleGrid").innerHTML = html;
   }
 
-  // --- FILTERS ---
   function applyFilter(){
     const raw = $("searchInput").value.trim();
     const typeFilter = $("typeFilter").value;
@@ -478,7 +493,6 @@
     applyFilter();
   }
 
-  // --- RENDER TABLE ---
   function renderTable(records){
     if(records.length === 0){
       $("tbody").innerHTML = "";
@@ -522,7 +536,6 @@
     }).join("");
   }
 
-  // --- PROFILE MODAL ---
   async function openProfile(phone){
     currentPhone = phone;
     const data = await api(`/api/admin/customer?phone=${phone}`);
@@ -530,6 +543,7 @@
 
     $("modalName").textContent = data.name;
     $("modalPhone").textContent = "+91 " + data.phone;
+    $("modalAddress").textContent = data.address || "—";
     $("modalDob").textContent = data.dob ? fmtDate(data.dob) : "—";
     
     const balance = safeNum(data.walletBalance);
@@ -541,14 +555,12 @@
     $("modalType").textContent = data.customerType || "Dine-in";
     $("modalSlot").textContent = data.deliverySlot || "—";
 
-    // Handle Pause State
     const isPaused = Boolean(data.isPaused);
     $("pausedBanner").style.display = isPaused ? "block" : "none";
     $("modalWalletBox").style.opacity = isPaused ? "0.5" : "1";
     $("pauseBtn").textContent = isPaused ? "Resume" : "Pause";
     $("pauseBtn").style.color = isPaused ? "var(--leaf)" : "var(--ink)";
     
-    // Disable log meal if paused
     if (isPaused) {
       $("logMealMainBtn").disabled = true;
       $("logMealMainBtn").textContent = "Paused";
@@ -559,7 +571,6 @@
       $("logMealMainBtn").style.opacity = "1";
     }
 
-    // Show/hide view schedule section
     if (data.customerType === "Home Delivery") {
       $("viewScheduleSection").style.display = "block";
       renderViewSchedule(data.weeklySchedule);
@@ -570,10 +581,8 @@
     const totalSpent = data.log.filter(l => l.amount < 0).reduce((s, l) => s + Math.abs(l.amount), 0);
     $("modalTotalSpent").textContent = fmtMoney(totalSpent);
 
-    // Set defaults for forms
     $("logMealAmount").value = basePrice || 0;
     
-    // Auto-fill meal description based on today's schedule
     const today = new Date().getDay();
     const dayKeys = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
     const todayKey = dayKeys[today];
@@ -586,13 +595,13 @@
     $("topUpAmount").value = 1000;
     $("topUpDesc").value = "Cash top-up";
     $("editName").value = data.name || "";
+    $("editAddress").value = data.address || "";
     $("editDob").value = data.dob || "";
     $("editBasePrice").value = basePrice || "";
     $("editType").value = data.customerType || "Dine-in";
     $("editSlot").value = data.deliverySlot || "";
     toggleEditSlot();
 
-    // Populate weekly schedule for edit form
     populateScheduleDropdowns('edit');
     DAYS.forEach(day => {
       if (data.weeklySchedule && data.weeklySchedule[day]) {
@@ -634,7 +643,6 @@
     if(key) loadDashboard(key);
   }
 
-  // --- FORM TOGGLES ---
   function openLogMealForm(){ 
     if ($("logMealMainBtn").disabled) return;
     closeAllForms(); $("logMealForm").style.display = "block"; 
@@ -657,7 +665,6 @@
     $("newScheduleSection").style.display = isDelivery ? "block" : "none";
   }
 
-  // --- PAUSE / RESUME ACTION ---
   async function togglePause() {
     const isCurrentlyPaused = $("pauseBtn").textContent === "Resume";
     const newPauseState = !isCurrentlyPaused;
@@ -676,11 +683,9 @@
       alert("Error updating status: " + data.error);
       return;
     }
-    // Reload profile to reflect changes
     openProfile(currentPhone);
   }
 
-  // --- ACTIONS ---
   async function submitLogMeal(){
     const amount = Number($("logMealAmount").value);
     const description = $("logMealDesc").value.trim();
@@ -735,6 +740,7 @@
 
   async function submitEditProfile(){
     const name = $("editName").value.trim();
+    const address = $("editAddress").value.trim();
     const dob = $("editDob").value;
     const baseMealPrice = Number($("editBasePrice").value);
     const customerType = $("editType").value;
@@ -761,7 +767,7 @@
     const res = await fetch(`${API_BASE}/api/admin/edit`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ key, phone: currentPhone, name, dob, baseMealPrice, customerType, deliverySlot, weeklySchedule }),
+      body: JSON.stringify({ key, phone: currentPhone, name, address, dob, baseMealPrice, customerType, deliverySlot, weeklySchedule }),
     });
     const data = await res.json();
     if(data.error){
@@ -789,7 +795,6 @@
     closeProfile();
   }
 
-  // --- NEW CUSTOMER ---
   function openNewCustomer(){ 
     populateScheduleDropdowns('new');
     $("newCustomerModal").classList.add("open"); 
@@ -799,6 +804,7 @@
   async function submitNewCustomer(){
     const name = $("newName").value.trim();
     const phone = $("newPhone").value.trim();
+    const address = $("newAddress").value.trim();
     const dob = $("newDob").value;
     const baseMealPrice = Number($("newBasePrice").value);
     const initialTopUp = Number($("newTopUp").value) || 0;
@@ -827,7 +833,7 @@
     const res = await fetch(`${API_BASE}/api/admin/create`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ key, name, phone, dob, baseMealPrice, initialTopUp, customerType, deliverySlot, weeklySchedule }),
+      body: JSON.stringify({ key, name, phone, address, dob, baseMealPrice, initialTopUp, customerType, deliverySlot, weeklySchedule }),
     });
     const data = await res.json();
     $("createCustomerBtn").disabled = false;
@@ -840,33 +846,55 @@
     setTimeout(() => { closeNewCustomer(); loadDashboard(key); }, 800);
   }
 
-  // --- EXPORT CSV (General) ---
+  // --- EXPORT: HTML to XLS (Allows Color Coding) ---
   function exportCSV(){
     if(!allRecords || allRecords.length === 0){
       alert("No customer data to export.");
       return;
     }
-    const rows = [["Name","Phone","DOB","Type","Slot","Wallet Balance","Base Meal Price","Meals Left","Total Spent","Last Meal Date","Status"]];
+    
+    // Construct HTML Table
+    let html = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+    <head><meta charset="UTF-8"></head><body>
+    <table border="1" cellspacing="0" cellpadding="5">
+      <thead>
+        <tr style="background-color: #EFF3EA; font-weight: bold;">
+          <th>Name</th><th>Phone</th><th>Address</th><th>Type</th><th>Slot</th>
+          <th>Wallet Balance</th><th>Base Meal Price</th><th>Meals Left</th><th>Total Spent</th><th>Last Meal Date</th><th>Status</th>
+        </tr>
+      </thead>
+      <tbody>`;
+      
     allRecords.forEach(r => {
       const mealsLeft = safeNum(r.mealsLeft);
       const status = r.isPaused ? "Paused" : (mealsLeft <= 0 ? "No Balance" : (mealsLeft <= 3 ? "Low" : "Active"));
-      rows.push([
-        r.name || "—", r.phone, r.dob || "—", r.customerType || "Dine-in", r.deliverySlot || "—",
-        safeNum(r.walletBalance), safeNum(r.baseMealPrice), mealsLeft, safeNum(r.totalSpent),
-        r.lastMealDate || "—", status
-      ]);
+      html += `<tr>
+        <td>${escapeHtml(r.name) || "—"}</td>
+        <td>${r.phone}</td>
+        <td>${escapeHtml(r.address) || "—"}</td>
+        <td>${r.customerType || "Dine-in"}</td>
+        <td>${r.deliverySlot || "—"}</td>
+        <td>${safeNum(r.walletBalance)}</td>
+        <td>${safeNum(r.baseMealPrice)}</td>
+        <td>${mealsLeft}</td>
+        <td>${safeNum(r.totalSpent)}</td>
+        <td>${r.lastMealDate || "—"}</td>
+        <td>${status}</td>
+      </tr>`;
     });
-    const csvContent = rows.map(row => row.map(v => `"${String(v).replace(/"/g,'""')}"`).join(",")).join("\n");
-    const blob = new Blob([csvContent], {type:"text/csv;charset=utf-8;"});
+    
+    html += `</tbody></table></body></html>`;
+
+    const blob = new Blob([html], {type: "application/vnd.ms-excel"});
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `healthy-diet-cafe-export-${todayStr()}.csv`;
+    a.download = `healthy-diet-cafe-data-${todayStr()}.xls`;
     a.click();
     URL.revokeObjectURL(url);
   }
 
-  // --- DAILY PREP CSV (Kitchen List) ---
+  // --- EXPORT: Daily Prep Sheet (HTML to XLS with Color Coding) ---
   function exportPrepCSV() {
     if(!allRecords || allRecords.length === 0) {
       alert("No customer data to generate prep list.");
@@ -878,13 +906,11 @@
     const todayKey = dayKeys[today];
     const todayDate = todayStr();
     
-    // Tally for Home Delivery
     const deliveryTally = { Lunch: {}, Dinner: {}, Both: {} };
-    // Tally for Dine-in (based on what was actually logged today)
     const dineInTally = {};
 
     allRecords.forEach(r => {
-      if (r.isPaused) return; // Skip paused customers
+      if (r.isPaused) return; 
 
       if (r.customerType === "Home Delivery") {
         const meal = r.weeklySchedule ? r.weeklySchedule[todayKey] : "";
@@ -894,7 +920,6 @@
           targetTally[meal] = (targetTally[meal] || 0) + 1;
         }
       } else {
-        // Dine-in: tally actual logs for today
         const todayLogs = r.log.filter(l => l.date === todayDate && l.amount < 0);
         todayLogs.forEach(l => {
           const meal = l.description || "Standard Meal";
@@ -903,37 +928,55 @@
       }
     });
 
-    // Build CSV
-    let rows = [["Slot", "Meal Type", "Quantity"]];
+    let rows = [];
     
-    // Add Home Delivery (Expected)
     ["Lunch", "Dinner", "Both"].forEach(slot => {
       Object.keys(deliveryTally[slot]).forEach(meal => {
-        rows.push([`Home Delivery - ${slot}`, meal, deliveryTally[slot][meal]]);
+        rows.push({ slot: `Home Delivery - ${slot}`, meal: meal, qty: deliveryTally[slot][meal] });
       });
     });
     
-    // Add Dine-in (Actual Logged)
     Object.keys(dineInTally).forEach(meal => {
-      rows.push(["Dine-in (Logged)", meal, dineInTally[meal]]);
+      rows.push({ slot: "Dine-in (Logged)", meal: meal, qty: dineInTally[meal] });
     });
 
-    if (rows.length === 1) {
+    if (rows.length === 0) {
       alert("No meals scheduled or logged for today yet.");
       return;
     }
 
-    const csvContent = rows.map(row => row.map(v => `"${String(v).replace(/"/g,'""')}"`).join(",")).join("\n");
-    const blob = new Blob([csvContent], {type:"text/csv;charset=utf-8;"});
+    // Construct HTML Table
+    let html = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+    <head><meta charset="UTF-8"></head><body>
+    <h2>Kitchen Prep List - ${todayDate}</h2>
+    <table border="1" cellspacing="0" cellpadding="5">
+      <thead>
+        <tr style="background-color: #EFF3EA; font-weight: bold;">
+          <th>Slot</th><th>Meal Type</th><th>Total Quantity</th>
+        </tr>
+      </thead>
+      <tbody>`;
+
+    rows.forEach(r => {
+      const colorStyle = getDietaryStyle(r.meal);
+      html += `<tr>
+        <td>${r.slot}</td>
+        <td style="${colorStyle} font-weight: bold;">${r.meal}</td>
+        <td style="text-align: center; font-weight: bold; font-size: 14px;">${r.qty}</td>
+      </tr>`;
+    });
+
+    html += `</tbody></table></body></html>`;
+
+    const blob = new Blob([html], {type: "application/vnd.ms-excel"});
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `cafe-prep-list-${todayDate}.csv`;
+    a.download = `kitchen-prep-${todayDate}.xls`;
     a.click();
     URL.revokeObjectURL(url);
   }
 
-  // --- AUTH & INIT ---
   async function fetchDashboard(key){
     const res = await fetch(`${API_BASE}/api/admin/list?key=${encodeURIComponent(key)}`);
     if(res.status === 401) throw new Error("unauthorized");
@@ -973,11 +1016,8 @@
     const key = sessionStorage.getItem(SESSION_KEY);
     const url = new URL(API_BASE + path);
     if(key && !options.noKey){
-      if(options.method === "POST"){
-        // key goes in body
-      } else {
-        url.searchParams.set("key", key);
-      }
+      if(options.method === "POST"){}
+      else { url.searchParams.set("key", key); }
     }
     const res = await fetch(url.toString(), {
       headers: { "Content-Type": "application/json" },
@@ -988,7 +1028,6 @@
     return data;
   }
 
-  // --- EVENT LISTENERS ---
   $("loadBtn").addEventListener("click", () => {
     const key = $("keyInput").value.trim();
     if(!key){ $("gateMsg").textContent = "Enter the admin key."; return; }
@@ -1012,7 +1051,6 @@
   });
   $("addCustomerBtn").addEventListener("click", openNewCustomer);
 
-  // Init on load
   populateMealOptions();
 
   const savedKey = sessionStorage.getItem(SESSION_KEY);
