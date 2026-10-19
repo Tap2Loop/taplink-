@@ -132,7 +132,7 @@
         <option value="Both">Both</option>
       </select>
       <div class="spacer"></div>
-      <button class="btn-ghost" id="prepCsvBtn" style="background:#D9A441; color:#fff;">Daily Prep Sheet</button>
+      <button class="btn-ghost" id="prepCsvBtn" style="background:#D9A441; color:#fff;">Daily Delivery Sheet</button>
       <button class="btn-ghost" id="exportBtn">Export Full Data</button>
       <button class="btn-primary btn-small" id="addCustomerBtn">+ New Customer</button>
       <button class="btn-ghost" id="refreshBtn">Refresh</button>
@@ -410,13 +410,11 @@
   function getDietaryStyle(mealText) {
     if (!mealText) return "";
     const text = mealText.toLowerCase();
-    // If it explicitly says non-veg, or contains common non-veg words
     if (text.includes("non-veg") || text.includes("chicken") || text.includes("mutton") || text.includes("fish") || text.includes("egg")) {
-      return "background-color: #f8d7da; color: #721c24;"; // Red/Pink for Non-Veg
+      return "background-color: #f8d7da; color: #721c24;"; // Red/Pink
     }
-    // If it says veg, or contains common veg words
     if (text.includes("veg") || text.includes("paneer") || text.includes("dal") || text.includes("salad")) {
-      return "background-color: #d4edda; color: #155724;"; // Green for Veg
+      return "background-color: #d4edda; color: #155724;"; // Green
     }
     return "";
   }
@@ -853,7 +851,6 @@
       return;
     }
     
-    // Construct HTML Table
     let html = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
     <head><meta charset="UTF-8"></head><body>
     <table border="1" cellspacing="0" cellpadding="5">
@@ -894,7 +891,7 @@
     URL.revokeObjectURL(url);
   }
 
-  // --- EXPORT: Daily Prep Sheet (HTML to XLS with Color Coding) ---
+  // --- EXPORT: Daily Delivery Sheet ---
   function exportPrepCSV() {
     if(!allRecords || allRecords.length === 0) {
       alert("No customer data to generate prep list.");
@@ -906,63 +903,59 @@
     const todayKey = dayKeys[today];
     const todayDate = todayStr();
     
-    const deliveryTally = { Lunch: {}, Dinner: {}, Both: {} };
-    const dineInTally = {};
+    // Array to hold individual line items for delivery
+    let deliveries = [];
 
     allRecords.forEach(r => {
+      // 1. Skip paused customers
       if (r.isPaused) return; 
 
+      // 2. Only process Home Delivery customers
       if (r.customerType === "Home Delivery") {
         const meal = r.weeklySchedule ? r.weeklySchedule[todayKey] : "";
+        
+        // 3. Only add if they actually have a meal scheduled for today
         if (meal && meal !== "Off" && meal !== "") {
-          const slot = r.deliverySlot || "Both";
-          const targetTally = deliveryTally[slot] || deliveryTally["Both"];
-          targetTally[meal] = (targetTally[meal] || 0) + 1;
+          deliveries.push({
+            slot: r.deliverySlot || "Both",
+            name: r.name || "—",
+            phone: r.phone || "—",
+            address: r.address || "—",
+            meal: meal
+          });
         }
-      } else {
-        const todayLogs = r.log.filter(l => l.date === todayDate && l.amount < 0);
-        todayLogs.forEach(l => {
-          const meal = l.description || "Standard Meal";
-          dineInTally[meal] = (dineInTally[meal] || 0) + 1;
-        });
       }
     });
 
-    let rows = [];
-    
-    ["Lunch", "Dinner", "Both"].forEach(slot => {
-      Object.keys(deliveryTally[slot]).forEach(meal => {
-        rows.push({ slot: `Home Delivery - ${slot}`, meal: meal, qty: deliveryTally[slot][meal] });
-      });
-    });
-    
-    Object.keys(dineInTally).forEach(meal => {
-      rows.push({ slot: "Dine-in (Logged)", meal: meal, qty: dineInTally[meal] });
-    });
-
-    if (rows.length === 0) {
-      alert("No meals scheduled or logged for today yet.");
+    if (deliveries.length === 0) {
+      alert("No Home Delivery meals scheduled for today.");
       return;
     }
+
+    // Sort by Slot (Lunch -> Dinner -> Both) for easier packing
+    const slotOrder = { "Lunch": 1, "Dinner": 2, "Both": 3 };
+    deliveries.sort((a, b) => slotOrder[a.slot] - slotOrder[b.slot]);
 
     // Construct HTML Table
     let html = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
     <head><meta charset="UTF-8"></head><body>
-    <h2>Kitchen Prep List - ${todayDate}</h2>
+    <h2>Home Delivery List - ${todayDate}</h2>
     <table border="1" cellspacing="0" cellpadding="5">
       <thead>
         <tr style="background-color: #EFF3EA; font-weight: bold;">
-          <th>Slot</th><th>Meal Type</th><th>Total Quantity</th>
+          <th>Slot</th><th>Customer Name</th><th>Phone</th><th>Address</th><th>Meal Type</th>
         </tr>
       </thead>
       <tbody>`;
 
-    rows.forEach(r => {
-      const colorStyle = getDietaryStyle(r.meal);
+    deliveries.forEach(d => {
+      const colorStyle = getDietaryStyle(d.meal);
       html += `<tr>
-        <td>${r.slot}</td>
-        <td style="${colorStyle} font-weight: bold;">${r.meal}</td>
-        <td style="text-align: center; font-weight: bold; font-size: 14px;">${r.qty}</td>
+        <td>${d.slot}</td>
+        <td>${escapeHtml(d.name)}</td>
+        <td>${escapeHtml(d.phone)}</td>
+        <td>${escapeHtml(d.address)}</td>
+        <td style="${colorStyle} font-weight: bold;">${escapeHtml(d.meal)}</td>
       </tr>`;
     });
 
@@ -972,7 +965,7 @@
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `kitchen-prep-${todayDate}.xls`;
+    a.download = `delivery-list-${todayDate}.xls`;
     a.click();
     URL.revokeObjectURL(url);
   }
