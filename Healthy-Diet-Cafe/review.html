@@ -49,6 +49,9 @@
     .rdot::after { content: ''; width: 8px; height: 8px; border-radius: 50%; background: var(--white); opacity: 0; transition: opacity .15s; }
     .review-card.selected .rdot::after { opacity: 1; }
 
+    .btn-next { width: 100%; padding: 12px; border-radius: var(--radius); border: 1.5px solid #a8d4ac; background: #eaf6ec; font-family: var(--font); font-size: 14px; font-weight: 600; color: #2e6337; cursor: pointer; -webkit-tap-highlight-color: transparent; transition: background .15s, transform .1s; }
+    .btn-next:active { background: #d9eedd; transform: scale(.98); }
+
     /* ── Divider ── */
     .divider { display: flex; align-items: center; gap: 10px; }
     .divider-line { flex: 1; height: 0.5px; background: var(--border); }
@@ -115,6 +118,8 @@
       <p id="review-text-2"></p>
     </div>
 
+    <button class="btn-next" onclick="showPair()">↻ Show other options</button>
+
     <div class="divider">
       <div class="divider-line"></div>
       <span class="divider-text">or write your own</span>
@@ -165,36 +170,137 @@
     "Ordered a couple of things and everything came out fresh and well made. Staff were friendly and quick. Exactly what a good health cafe should feel like.",
     "Solid healthy food options that actually taste great. Not your typical bland diet food at all. The portions were generous and left me genuinely satisfied.",
     "One of the better healthy eating spots I have found in Pune. Feels like they actually put thought into the recipes rather than just cutting out the oil and calling it healthy.",
-    "Was pleasantly surprised by how good the food was here. Came in expecting basic health food and got something genuinely enjoyable. Will definitely be back."
+    "Was pleasantly surprised by how good the food was here. Came in expecting basic health food and got something genuinely enjoyable. Will definitely be back.",
+    "The food was tasty and well prepared.",
+    "Enjoyed the flavour and freshness of the meal.",
+    "A nice balance of taste and wholesome ingredients.",
+    "The meal was satisfying without feeling too heavy.",
+    "Good food option when I want something fresh and balanced.",
+    "The seasoning and overall flavour were enjoyable.",
+    "A pleasant meal with a good combination of ingredients.",
+    "The food was enjoyable and nicely presented.",
+    "I liked the variety of flavours in the meal.",
+    "A convenient place to explore healthier food choices.",
+    "A useful option for people looking for protein-rich meals.",
+    "The meal worked well as part of my fitness-focused routine.",
+    "Good choice when looking for a filling meal after a workout.",
+    "I appreciate having more nutritious options available nearby.",
+    "The menu is worth exploring for fitness-conscious customers.",
+    "A convenient way to plan a balanced meal on a busy day.",
+    "The protein-focused options make the menu interesting.",
+    "A satisfying meal option for an active lifestyle.",
+    "Nice to find food choices that fit a fitness-oriented routine.",
+    "The meal was filling and suited my lunch break.",
+    "The meal-plan option could be convenient for regular customers.",
+    "A practical concept for people who want to plan meals ahead.",
+    "The monthly plan is worth considering for a consistent routine.",
+    "Useful option for anyone looking to organise weekday meals.",
+    "I like the idea of having planned meals available regularly.",
+    "Meal plans can make workday lunches easier to manage.",
+    "A convenient concept for people with busy schedules.",
+    "The menu variety is an important plus for regular meal planning.",
+    "A handy lunch option during a busy workday.",
+    "Convenient for people working nearby who want a proper meal.",
+    "A useful alternative to the usual office lunch choices.",
+    "The location makes it practical for a quick workday meal.",
+    "Good concept for professionals looking for balanced lunch options.",
+    "A nice option to consider for weekday meals near the office.",
+    "Useful when you need a meal without spending too much time.",
+    "A practical food option for a busy office schedule.",
+    "The sandwich was enjoyable and made a convenient snack.",
+    "A nice option when I want something quick to eat.",
+    "The wrap was easy to enjoy during a short break.",
+    "Good to have lighter snack options on the menu.",
+    "The sandwich made for a convenient and satisfying bite.",
+    "A handy option for a quick meal between activities.",
+    "Healthy Diet Cafe has an interesting focus on balanced meals.",
+    "A cafe worth exploring if healthier food is part of your routine.",
+    "The concept brings together convenience and nutrition-focused choices.",
+    "I would explore more of the menu on a future visit.",
+    "A helpful addition to the local food options.",
+    "Enjoyed the flavour and freshness of the meal. This is a useful option to keep in mind for weekday meals.",
+    "A nice balance of taste and wholesome ingredients. I would choose an option that matches my own dietary needs.",
+    "A pleasant meal with a good combination of ingredients. This is a useful option to keep in mind for weekday meals.",
+    "The food was enjoyable and nicely presented. I would choose an option that matches my own dietary needs.",
+    "I appreciate having more nutritious options available nearby. This is a useful option to keep in mind for weekday meals.",
+    "The menu is worth exploring for fitness-conscious customers. I would choose an option that matches my own dietary needs.",
+    "Nice to find food choices that fit a fitness-oriented routine. This is a useful option to keep in mind for weekday meals.",
+    "The meal was filling and suited my lunch break. I would choose an option that matches my own dietary needs.",
+    "The meal-plan option could be convenient for regular customers. This is a useful option to keep in mind for weekday meals.",
+    "A practical concept for people who want to plan meals ahead. I would choose an option that matches my own dietary needs.",
+    "Meal plans can make workday lunches easier to manage. This is a useful option to keep in mind for weekday meals.",
+    "A convenient concept for people with busy schedules. I would choose an option that matches my own dietary needs.",
+    "The monthly plan is worth considering for a consistent routine. This is a useful option to keep in mind for weekday meals.",
+    "Useful option for anyone looking to organise weekday meals. I would choose an option that matches my own dietary needs.",
+    "The menu variety is an important plus for regular meal planning. This is a useful option to keep in mind for weekday meals.",
+    "The meal-plan option could be convenient for regular customers. I would choose an option that matches my own dietary needs.",
+    "I like the idea of having planned meals available regularly. This is a useful option to keep in mind for weekday meals.",
+    "Meal plans can make workday lunches easier to manage. I would choose an option that matches my own dietary needs.",
+    "A practical concept for people who want to plan meals ahead. This is a useful option to keep in mind for weekday meals.",
+    "The monthly plan is worth considering for a consistent routine. I would choose an option that matches my own dietary needs.",
+    "A convenient concept for people with busy schedules. This is a useful option to keep in mind for weekday meals.",
+    "The menu variety is an important plus for regular meal planning. I would choose an option that matches my own dietary needs.",
+    "A handy lunch option during a busy workday. I would choose an option that matches my own dietary needs.",
+    "Good concept for professionals looking for balanced lunch options. This is a useful option to keep in mind for weekday meals.",
+    "A nice option to consider for weekday meals near the office. I would choose an option that matches my own dietary needs.",
+    "Convenient for people working nearby who want a proper meal. This is a useful option to keep in mind for weekday meals.",
+    "A useful alternative to the usual office lunch choices. I would choose an option that matches my own dietary needs.",
+    "A practical food option for a busy office schedule. I would choose an option that matches my own dietary needs.",
+    "The location makes it practical for a quick workday meal. This is a useful option to keep in mind for weekday meals.",
+    "Good concept for professionals looking for balanced lunch options. I would choose an option that matches my own dietary needs.",
+    "A handy lunch option during a busy workday. This is a useful option to keep in mind for weekday meals.",
+    "Convenient for people working nearby who want a proper meal. I would choose an option that matches my own dietary needs.",
+    "A nice option to consider for weekday meals near the office. This is a useful option to keep in mind for weekday meals.",
+    "Useful when you need a meal without spending too much time. I would choose an option that matches my own dietary needs.",
+    "The sandwich was enjoyable and made a convenient snack. I would choose an option that matches my own dietary needs.",
+    "The sandwich made for a convenient and satisfying bite. This is a useful option to keep in mind for weekday meals.",
+    "A handy option for a quick meal between activities. I would choose an option that matches my own dietary needs.",
+    "Good to have lighter snack options on the menu. This is a useful option to keep in mind for weekday meals.",
+    "The sandwich made for a convenient and satisfying bite. I would choose an option that matches my own dietary needs.",
+    "The wrap was easy to enjoy during a short break. This is a useful option to keep in mind for weekday meals.",
+    "Good to have lighter snack options on the menu. I would choose an option that matches my own dietary needs.",
+    "A nice option when I want something quick to eat. This is a useful option to keep in mind for weekday meals.",
+    "The wrap was easy to enjoy during a short break. I would choose an option that matches my own dietary needs.",
+    "I would explore more of the menu on a future visit. This is a useful option to keep in mind for weekday meals.",
+    "A helpful addition to the local food options. I would choose an option that matches my own dietary needs."
   ];
 
-  function pickTwo(arr) {
-    const s = [...arr].sort(() => Math.random() - 0.5);
-    return [s[0], s[1]];
-  }
-
-  const [r1, r2] = pickTwo(ALL_REVIEWS);
-  document.getElementById('review-text-1').textContent = r1;
-  document.getElementById('review-text-2').textContent = r2;
-  const active = { 1: r1, 2: r2 };
+  let queue = [];
+  const active = { 1: '', 2: '' };
   let selected = 1;
 
-  function selectCard(n) {
+  function setSelected(n) {
     selected = n;
-    document.getElementById('own-review').value = '';
-    document.getElementById('char-count').textContent = '0 / 500';
     [1,2].forEach(i => {
       const el = document.getElementById('card-' + i);
       el.classList.toggle('selected', i === n);
       el.setAttribute('aria-checked', i === n);
     });
-    // Copy the selected review text immediately on tap
+  }
+
+  // Two options at a time from a shuffled pool: each visitor starts on a different pair,
+  // and nothing repeats until the whole pool has been shown.
+  function showPair() {
+    if (queue.length < 2) queue = [...ALL_REVIEWS].sort(() => Math.random() - 0.5);
+    active[1] = queue.pop();
+    active[2] = queue.pop();
+    document.getElementById('review-text-1').textContent = active[1];
+    document.getElementById('review-text-2').textContent = active[2];
+    document.getElementById('own-review').value = '';
+    document.getElementById('char-count').textContent = '0 / 500';
+    setSelected(1);
+  }
+
+  // Tapping a card selects it and copies it
+  function selectCard(n) {
+    document.getElementById('own-review').value = '';
+    document.getElementById('char-count').textContent = '0 / 500';
+    setSelected(n);
     const text = active[n];
-    if (!text) return;
     const card = document.getElementById('card-' + n);
     const done = () => {
       card.style.borderColor = 'var(--success)';
-      showToast('Copied — now tap Open Google Reviews and paste');
+      showToast('Copied — now tap the Google button and paste');
       setTimeout(() => { card.style.borderColor = ''; }, 2500);
     };
     navigator.clipboard ? navigator.clipboard.writeText(text).then(done).catch(() => fbCopy(text, done)) : fbCopy(text, done);
@@ -202,14 +308,11 @@
 
   function onOwnInput(el) {
     document.getElementById('char-count').textContent = el.value.length + ' / 500';
-    if (el.value.length > 0) {
-      selected = 0;
-      [1,2].forEach(i => {
-        document.getElementById('card-' + i).classList.remove('selected');
-        document.getElementById('card-' + i).setAttribute('aria-checked','false');
-      });
-    } else { selectCard(1); }
+    if (el.value.length > 0) { selected = 0; [1,2].forEach(i => { const c = document.getElementById('card-' + i); c.classList.remove('selected'); c.setAttribute('aria-checked','false'); }); }
+    else setSelected(1);
   }
+
+  showPair();
 
   // Tap own-wrap to copy whatever is typed inside
   function copyOwn() {
@@ -220,7 +323,7 @@
     const done = () => {
       wrap.classList.add('copied');
       hint.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Copied!';
-      showToast('Copied — now tap Open Google Reviews and paste');
+      showToast('Copied — now tap the Google button and paste');
       setTimeout(() => {
         wrap.classList.remove('copied');
         hint.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Tap to copy';
