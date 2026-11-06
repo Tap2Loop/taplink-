@@ -7,39 +7,31 @@
 <style>
   :root{--ink:#1a3a2a;--paper:#fff;--line:#e4e1da;--muted:#8a8580;--gold:#b6862c;--gold-soft:#f8efdc;--stamp-empty:#f1efe9;}
   *{box-sizing:border-box}html,body{margin:0;padding:0}
-  body{background:var(--paper);color:var(--ink);font-family:'Segoe UI',-apple-system,BlinkMacSystemFont,sans-serif;min-height:100vh;display:flex;align-items:flex-start;justify-content:center}
-  .screen{width:100%;max-width:480px;min-height:100vh;display:flex;flex-direction:column}
+  body{background:var(--paper);color:var(--ink);font-family:'Segoe UI',sans-serif;min-height:100vh;display:flex;justify-content:center}
+  .screen{width:100%;max-width:480px;display:flex;flex-direction:column}
   .hero{background:var(--ink);color:#fff;padding:38px 28px 30px;text-align:center}
   .hero-eyebrow{font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:#a0c0b0;margin-bottom:10px}
-  .hero-name{font-family:Georgia,serif;font-size:28px;font-weight:700;line-height:1.2}
+  .hero-name{font-family:Georgia,serif;font-size:28px;font-weight:700}
   .hero-sub{margin-top:6px;font-size:13px;color:#a0c0b0}
   .body{flex:1;padding:30px 24px 40px;display:flex;flex-direction:column;gap:22px}
   .hidden{display:none!important}
-  #loadingState{display:flex;align-items:center;justify-content:center;padding:60px 0;color:var(--muted);font-size:14px}
-  #phoneState,#otpState{display:none;flex-direction:column;gap:14px}
+  #phoneState,#cardState{display:none;flex-direction:column;gap:14px}
   .field-label{font-size:14px;font-weight:600;margin-bottom:5px}
-  .field-help{font-size:12px;color:var(--muted);margin-bottom:6px}
-  .text-input{width:100%;padding:14px 16px;font-size:16px;border:1.5px solid var(--line);border-radius:10px;background:#fff;color:var(--ink)}
+  .text-input{width:100%;padding:14px 16px;font-size:16px;border:1.5px solid var(--line);border-radius:10px}
   .text-input:focus{outline:none;border-color:var(--ink)}
-  .otp-input{letter-spacing:.5em;text-align:center;font-size:20px}
-  .btn-primary{width:100%;padding:16px;background:var(--ink);color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:600;cursor:pointer;margin-top:4px}
-  .btn-primary:active{opacity:.85}.btn-primary:disabled{opacity:.5;cursor:not-allowed}
-  .btn-secondary{width:100%;padding:12px;background:#fff;color:var(--muted);border:1.5px solid var(--line);border-radius:10px;font-size:13px;cursor:pointer;margin-top:4px}
-  .remember-note{font-size:12px;color:var(--muted);text-align:center;line-height:1.5}
-  #cardState{display:none;flex-direction:column;gap:24px}
+  .btn-primary{width:100%;padding:16px;background:var(--ink);color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:600;cursor:pointer}
   .greet-row{display:flex;align-items:baseline;justify-content:space-between}
-  .greet{font-size:15px;color:var(--muted)}.greet strong{color:var(--ink);font-weight:600}
-  .switch-number{font-size:12px;color:var(--muted);text-decoration:underline;cursor:pointer;background:none;border:none;padding:0}
+  .greet{font-size:15px;color:var(--muted)}.greet strong{color:var(--ink)}
+  .switch-number{font-size:12px;color:var(--muted);text-decoration:underline;background:none;border:none;cursor:pointer}
   .status-banner{border:1.5px solid var(--line);border-radius:12px;padding:16px 18px;text-align:center}
   .status-banner.unlocked{border-color:var(--gold);background:var(--gold-soft)}
   .status-line{font-size:13px;color:var(--muted)}
   .status-banner.unlocked .status-line{color:#8a6315}
   .status-reward{margin-top:4px;font-family:Georgia,serif;font-size:20px;font-weight:700}
-  .status-banner.unlocked .status-reward{color:#7a5414}
   .card-frame{border:1.5px solid var(--line);border-radius:14px;padding:22px 18px}
   .card-title{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-bottom:16px;text-align:center}
   .stamp-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:14px}
-  .stamp{aspect-ratio:1;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-direction:column;border:1.5px solid var(--line);background:var(--stamp-empty);position:relative}
+  .stamp{aspect-ratio:1;border-radius:50%;display:flex;align-items:center;justify-content:center;border:1.5px solid var(--line);background:var(--stamp-empty);position:relative}
   .stamp .num{font-size:10px;color:var(--muted);position:absolute;top:-7px;left:50%;transform:translateX(-50%);background:#fff;padding:0 4px}
   .stamp.filled{background:var(--ink);border-color:var(--ink)}
   .stamp.filled::after{content:"";width:9px;height:9px;border-left:2px solid #fff;border-bottom:2px solid #fff;transform:rotate(-45deg) translate(1px,-1px)}
@@ -48,23 +40,16 @@
   .stamp.reward.filled{background:var(--gold);border-style:solid;border-color:var(--gold)}
   .stamp.reward.filled .reward-label{color:#fff}
   .stamp.reward.filled::after{display:none}
-  .legend{margin-top:16px;font-size:11.5px;color:var(--muted);text-align:center;line-height:1.5}
   .staff-zone{border-top:1.5px dashed var(--line);padding-top:22px;display:flex;flex-direction:column;gap:10px}
   .staff-label{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);text-align:center}
   .btn-staff{width:100%;padding:16px;background:#fff;color:var(--ink);border:1.5px solid var(--ink);border-radius:10px;font-size:15px;font-weight:600;cursor:pointer}
-  .btn-staff:active{background:var(--ink);color:#fff}
-  .btn-staff:disabled{opacity:.4;cursor:not-allowed}
-  .staff-hint{font-size:12px;color:var(--muted);text-align:center}
-  .footer{text-align:center;font-size:11px;color:var(--muted);letter-spacing:.06em;padding:18px 0 6px}
-  .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--ink);color:#fff;padding:12px 20px;border-radius:30px;font-size:13px;opacity:0;transition:opacity .25s,transform .25s;pointer-events:none;white-space:nowrap;max-width:90%}
+  .footer{text-align:center;font-size:11px;color:var(--muted);padding:18px 0 6px}
+  .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--ink);color:#fff;padding:12px 20px;border-radius:30px;font-size:13px;opacity:0;transition:opacity .25s,transform .25s;pointer-events:none}
   .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
   .modal-overlay{display:none;position:fixed;inset:0;background:rgba(20,20,20,.55);align-items:center;justify-content:center;z-index:50;padding:20px}
   .modal-overlay.show{display:flex}
   .modal{background:#fff;border-radius:16px;padding:28px 24px;width:100%;max-width:340px;text-align:center}
-  .modal h3{margin:0 0 6px;font-size:17px;color:var(--ink)}
-  .modal p{margin:0 0 18px;font-size:13px;color:var(--muted)}
   .pin-input{width:100%;padding:14px;font-size:22px;text-align:center;letter-spacing:.4em;border:1.5px solid var(--line);border-radius:10px;margin-bottom:14px}
-  .pin-input:focus{outline:none;border-color:var(--ink)}
   .modal-actions{display:flex;gap:10px}
   .modal-actions button{flex:1;padding:13px;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer}
   .btn-cancel{background:#fff;border:1.5px solid var(--line);color:var(--muted)}
@@ -75,34 +60,19 @@
 <div class="screen">
   <div class="hero">
     <div class="hero-eyebrow">Loyalty Card</div>
-    <div class="hero-name" id="cafeName">Loading...</div>
-    <div class="hero-sub">Vietnamese coffee &amp; kitchen · Hinjawadi, Pune</div>
+    <div class="hero-name" id="cafeName">RAHI Cà-phê Vietnam</div>
   </div>
   <div class="body">
-    <div id="loadingState">Loading...</div>
-
     <div id="phoneState">
       <div>
         <div class="field-label">Your name</div>
-        <input type="text" id="nameInput" class="text-input" placeholder="Enter your name" autocomplete="name">
+        <input type="text" id="nameInput" class="text-input" placeholder="Enter your name">
       </div>
       <div>
         <div class="field-label">Mobile number</div>
-        <div class="field-help">We'll send a one-time code to verify it's really you.</div>
-        <input type="tel" id="phoneInput" class="text-input" placeholder="10-digit mobile number" maxlength="10" inputmode="numeric">
+        <input type="tel" id="phoneInput" class="text-input" placeholder="10-digit mobile number" maxlength="10">
       </div>
-      <button class="btn-primary" id="sendOtpBtn" onclick="sendOtp()">Send OTP</button>
-      <div class="remember-note">One-time verification. Your card stays on this phone after that.</div>
-    </div>
-
-    <div id="otpState">
-      <div>
-        <div class="field-label">Enter the 6-digit code</div>
-        <div class="field-help">Sent to <span id="otpPhone"></span>. Expires in 5 minutes.</div>
-        <input type="tel" id="otpInput" class="text-input otp-input" placeholder="••••••" maxlength="6" inputmode="numeric">
-      </div>
-      <button class="btn-primary" id="verifyBtn" onclick="verifyOtp()">Verify &amp; Show Card</button>
-      <button class="btn-secondary" onclick="backToPhone()">Change number</button>
+      <button class="btn-primary" onclick="submitPhone()">Show my card</button>
     </div>
 
     <div id="cardState">
@@ -117,28 +87,24 @@
       <div class="card-frame">
         <div class="card-title">Your Punch Card</div>
         <div class="stamp-grid" id="stampGrid"></div>
-        <div class="legend">Gold slots unlock a reward · Dark slots are confirmed visits</div>
       </div>
       <div class="staff-zone">
         <div class="staff-label">For Staff Only</div>
         <button class="btn-staff" id="confirmBtn" onclick="openPinModal('confirm')">Confirm Visit</button>
         <button class="btn-staff hidden" id="resetBtn" onclick="openPinModal('reset')">Start New Card</button>
-        <div class="staff-hint">Tap only after the bill is settled at the counter.</div>
       </div>
     </div>
-
-    <div class="footer">Powered by TapReview</div>
   </div>
+  <div class="footer">Powered by TapReview</div>
 </div>
 
 <div class="modal-overlay" id="pinOverlay">
   <div class="modal">
     <h3>Staff PIN</h3>
-    <p id="pinHelp">Enter the 4-digit staff PIN.</p>
-    <input type="password" id="pinInput" class="pin-input" maxlength="4" inputmode="numeric" placeholder="••••">
+    <input type="password" id="pinInput" class="pin-input" maxlength="4" placeholder="••••">
     <div class="modal-actions">
       <button class="btn-cancel" onclick="closePinModal()">Cancel</button>
-      <button class="btn-confirm" id="pinSubmitBtn" onclick="submitPin()">Confirm</button>
+      <button class="btn-confirm" onclick="submitPin()">Confirm</button>
     </div>
   </div>
 </div>
@@ -146,249 +112,132 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-  /* ---------- CONFIG ---------- */
-  const SUPABASE_URL = "https://udmjsnmiseqngpaozqfx.supabase.co/rest/v1/";
-  const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVkbWpzbm1pc2VxbmdwYW96cWZ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI3NzM1OTEsImV4cCI6MjEwODM0OTU5MX0.LPCEv0k-GtVoBTkSe0QaytkK3g6MWSX3E4dm9Mr_d-w";
+  /* --- SET YOUR SUPABASE URL AND KEY HERE --- */
+  const SUPABASE_URL = "https://gszhclrdisokzikewgbm.supabase.co";
+  const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdzemhjbHJkaXNva3ppa2V3Z2JtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIyOTA5MDUsImV4cCI6MjA5Nzg2NjkwNX0.37t3LSM9At1q-nhiijb7Qh5U6C3gV1XUDe_OhIUYKhw";
+  
   const CAFE_ID = "rahi";
-  const EDGE_BASE = SUPABASE_URL + "/functions/v1";
-  const SESSION_KEY = "loyalty_session_" + CAFE_ID;
-
+  const STORAGE_KEY = "loyalty_rahi";
   const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
+  
   let card = null;
-  let pendingPhone = null;
-  let pendingName = null;
   let pinAction = "confirm";
 
-  /* ---------- UI helpers ---------- */
-  const $ = id => document.getElementById(id);
-  function showToast(msg){const t=$('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2600);}
-  function maskPhone(p){return "+91 " + p.slice(0,5) + " " + p.slice(5);}
-  function show(el){el.classList.remove('hidden');el.style.display='flex';}
-  function hide(el){el.style.display='none';}
+  function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2600);}
 
-  function showPhoneState(){
-    hide($('loadingState'));hide($('otpState'));hide($('cardState'));show($('phoneState'));
+  async function submitPhone(){
+    const name = document.getElementById('nameInput').value.trim();
+    const phone = document.getElementById('phoneInput').value.trim();
+    if(!name) return showToast("Please enter your name");
+    if(!/^\d{10}$/.test(phone)) return showToast("Enter a valid 10-digit number");
+
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({phone, name}));
+    await loadCard(phone, name);
   }
-  function showOtpState(){
-    hide($('phoneState'));hide($('loadingState'));hide($('cardState'));show($('otpState'));
-    $('otpPhone').textContent = maskPhone(pendingPhone);
-    $('otpInput').value = ""; setTimeout(()=>$('otpInput').focus(), 200);
-  }
-  function showCardState(){
-    hide($('phoneState'));hide($('otpState'));hide($('loadingState'));show($('cardState'));
-  }
-
-  /* ---------- boot ---------- */
-  async function boot(){
-    try {
-      const { data } = await db.rpc('get_cafe_public', { p_cafe_id: CAFE_ID });
-      if (data && data.name) $('cafeName').textContent = data.name;
-    } catch (e) { /* ignore — fallback name shown */ }
-
-    const saved = localStorage.getItem(SESSION_KEY);
-    if (saved) {
-      try {
-        const { token } = JSON.parse(saved);
-        if (token && await loadCard(token)) return;
-      } catch (_) {}
-      localStorage.removeItem(SESSION_KEY);
-    }
-    showPhoneState();
-  }
-
-  async function loadCard(token){
-    const { data, error } = await db.rpc('get_my_card', { p_token: token });
-    if (error || !data || !data.success) return false;
-    card = data;
-    renderCard();
-    showCardState();
-    return true;
-  }
-
-  /* ---------- OTP flow ---------- */
-  async function sendOtp(){
-    const name = $('nameInput').value.trim();
-    const phone = $('phoneInput').value.trim();
-    if (!name) return showToast("Please enter your name");
-    if (!/^\d{10}$/.test(phone)) return showToast("Enter a valid 10-digit number");
-
-    pendingPhone = phone; pendingName = name;
-    const btn = $('sendOtpBtn');
-    btn.disabled = true; btn.textContent = "Sending...";
-
-    try {
-      const res = await fetch(EDGE_BASE + "/send-otp", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": "Bearer " + SUPABASE_KEY,
-          "apikey": SUPABASE_KEY,
-        },
-        body: JSON.stringify({ cafe_id: CAFE_ID, phone, name }),
-      });
-      const json = await res.json();
-      if (!json.success) throw new Error(json.error || "Could not send OTP");
-      showOtpState();
-    } catch (e) {
-      showToast(e.message);
-    } finally {
-      btn.disabled = false; btn.textContent = "Send OTP";
-    }
-  }
-
-  async function verifyOtp(){
-    const otp = $('otpInput').value.trim();
-    if (!/^\d{6}$/.test(otp)) return showToast("Enter the 6-digit code");
-
-    const btn = $('verifyBtn');
-    btn.disabled = true; btn.textContent = "Verifying...";
-
-    try {
-      const res = await fetch(EDGE_BASE + "/verify-otp", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": "Bearer " + SUPABASE_KEY,
-          "apikey": SUPABASE_KEY,
-        },
-        body: JSON.stringify({
-          cafe_id: CAFE_ID, phone: pendingPhone, otp, name: pendingName,
-        }),
-      });
-      const json = await res.json();
-      if (!json.success) throw new Error(json.error || "Verification failed");
-      localStorage.setItem(SESSION_KEY, JSON.stringify({ token: json.token }));
-      const ok = await loadCard(json.token);
-      if (!ok) throw new Error("Could not load card");
-      showToast("Verified ✓");
-    } catch (e) {
-      showToast(e.message);
-    } finally {
-      btn.disabled = false; btn.textContent = "Verify & Show Card";
-    }
-  }
-
-  function backToPhone(){ showPhoneState(); }
 
   function resetCustomer(){
-    localStorage.removeItem(SESSION_KEY);
-    card = null;
-    $('phoneInput').value = "";
-    $('nameInput').value = "";
-    showPhoneState();
+    localStorage.removeItem(STORAGE_KEY);
+    document.getElementById('phoneState').style.display = 'flex';
+    document.getElementById('cardState').style.display = 'none';
   }
 
-  /* ---------- card render ---------- */
+  async function loadCard(phone, name){
+    document.getElementById('phoneState').style.display = 'none';
+    
+    // Get card data
+    const { data } = await db.rpc('get_my_card', { p_cafe_id: CAFE_ID, p_phone: phone });
+    if(data) {
+      card = data;
+      // If they entered a name but DB has none, update DB
+      if(name && !card.name) {
+        await db.rpc('update_name', { p_cafe_id: CAFE_ID, p_phone: phone, p_name: name });
+        card.name = name;
+      }
+      renderCard();
+      document.getElementById('cardState').style.display = 'flex';
+    }
+  }
+
   function renderCard(){
-    const TOTAL = card.total_slots;
-    const REWARDS = card.reward_config || {};
-    const visits = card.visit_count;
-
-    $('greetName').textContent = card.name || maskPhone(card.phone);
-
-    const grid = $('stampGrid');
+    document.getElementById('greetName').textContent = card.name || "+91 " + card.phone;
+    const TOTAL = card.total_slots, REWARDS = card.reward_config || {}, visits = card.visit_count;
+    
+    const grid = document.getElementById('stampGrid');
     grid.innerHTML = "";
     for (let i = 1; i <= TOTAL; i++) {
       const isReward = !!REWARDS[String(i)];
       const isFilled = i <= visits;
       const cell = document.createElement('div');
       cell.className = 'stamp' + (isReward ? ' reward' : '') + (isFilled ? ' filled' : '');
+      
       const num = document.createElement('div');
-      num.className = 'num'; num.textContent = i;
-      cell.appendChild(num);
+      num.className = 'num'; num.textContent = i; cell.appendChild(num);
+      
       if (isReward) {
         const lbl = document.createElement('div');
-        lbl.className = 'reward-label'; lbl.textContent = REWARDS[String(i)];
-        cell.appendChild(lbl);
+        lbl.className = 'reward-label'; lbl.textContent = REWARDS[String(i)]; cell.appendChild(lbl);
       }
       grid.appendChild(cell);
     }
 
-    const banner = $('statusBanner'), line = $('statusLine'), rewardEl = $('statusReward');
-    const confirmBtn = $('confirmBtn'), resetBtn = $('resetBtn');
+    const banner = document.getElementById('statusBanner'), line = document.getElementById('statusLine'), rewardEl = document.getElementById('statusReward');
+    const confirmBtn = document.getElementById('confirmBtn'), resetBtn = document.getElementById('resetBtn');
+    
     banner.classList.remove('unlocked');
-
     if (card.card_completed) {
-      banner.classList.add('unlocked');
-      line.textContent = "Card Completed";
-      rewardEl.textContent = "🎉 " + (REWARDS[String(TOTAL)] || "Final reward") + " — hand to staff";
-      confirmBtn.classList.add('hidden');
-      resetBtn.classList.remove('hidden');
+      banner.classList.add('unlocked'); line.textContent = "Card Completed";
+      rewardEl.textContent = "🎉 " + (REWARDS[String(TOTAL)] || "Reward") + " — hand to staff";
+      confirmBtn.classList.add('hidden'); resetBtn.classList.remove('hidden');
     } else {
-      confirmBtn.classList.remove('hidden');
-      resetBtn.classList.add('hidden');
-      confirmBtn.disabled = false;
-      confirmBtn.textContent = "Confirm Visit";
-
+      confirmBtn.classList.remove('hidden'); resetBtn.classList.add('hidden');
       if (REWARDS[String(visits)]) {
-        banner.classList.add('unlocked');
-        line.textContent = "Visit " + visits + " of " + TOTAL;
-        rewardEl.textContent = "🎉 " + REWARDS[String(visits)] + " unlocked — show this to staff";
+        banner.classList.add('unlocked'); line.textContent = "Visit " + visits + " of " + TOTAL;
+        rewardEl.textContent = "🎉 " + REWARDS[String(visits)] + " unlocked!";
       } else {
         line.textContent = "Visit " + visits + " of " + TOTAL;
-        const slots = Object.keys(REWARDS).map(Number).sort((a,b)=>a-b);
-        const next = slots.find(s => s > visits);
-        if (next) {
-          const rem = next - visits;
-          rewardEl.textContent = rem + " more visit" + (rem>1?"s":"") + " to " + REWARDS[String(next)];
-        } else {
-          rewardEl.textContent = (TOTAL - visits) + " more to complete card";
-        }
+        const next = Object.keys(REWARDS).map(Number).sort((a,b)=>a-b).find(s => s > visits);
+        rewardEl.textContent = next ? (next - visits) + " more visits to " + REWARDS[String(next)] : (TOTAL - visits) + " to complete card";
       }
     }
   }
 
-  /* ---------- staff PIN ---------- */
   function openPinModal(action){
     pinAction = action;
-    $('pinHelp').textContent = action === 'reset'
-      ? "Enter the staff PIN to start a new card."
-      : "Enter the 4-digit staff PIN to confirm this visit.";
-    $('pinOverlay').classList.add('show');
-    $('pinInput').value = ""; setTimeout(()=>$('pinInput').focus(), 100);
+    document.getElementById('pinOverlay').classList.add('show');
+    document.getElementById('pinInput').value = ""; 
+    setTimeout(()=>document.getElementById('pinInput').focus(), 100);
   }
-  function closePinModal(){ $('pinOverlay').classList.remove('show'); }
+  function closePinModal(){ document.getElementById('pinOverlay').classList.remove('show'); }
 
   async function submitPin(){
-    const pin = $('pinInput').value.trim();
-    if (pin.length !== 4) return showToast("Enter the 4-digit PIN");
-    const btn = $('pinSubmitBtn');
-    btn.disabled = true; btn.textContent = "Checking...";
-
-    try {
-      const fn = pinAction === 'reset' ? 'reset_card' : 'confirm_visit';
-      const { data, error } = await db.rpc(fn, {
-        p_cafe_id: CAFE_ID, p_phone: card.phone, p_pin: pin,
-      });
-      if (error) throw error;
-      if (!data || !data.success) throw new Error(data?.error || "Action failed");
-
-      closePinModal();
-
-      if (pinAction === 'reset') {
-        card.visit_count = 0;
-        card.card_completed = false;
-        renderCard();
-        showToast("New card started");
-      } else {
-        card.visit_count = data.new_count;
-        card.card_completed = data.card_completed;
-        renderCard();
-        if (data.reward_unlocked) showToast("🎉 " + data.reward_unlocked + " unlocked!");
-        else showToast("Visit confirmed — " + data.new_count + " of " + card.total_slots);
-      }
-    } catch (e) {
-      showToast(e.message || "Something went wrong");
-    } finally {
-      btn.disabled = false; btn.textContent = "Confirm";
+    const pin = document.getElementById('pinInput').value.trim();
+    if (pin.length !== 4) return showToast("Enter 4-digit PIN");
+    
+    const fn = pinAction === 'reset' ? 'reset_card' : 'confirm_visit';
+    const { data } = await db.rpc(fn, { p_cafe_id: CAFE_ID, p_phone: card.phone, p_pin: pin });
+    
+    if (!data || !data.success) return showToast(data?.error || "Incorrect PIN");
+    
+    closePinModal();
+    if (pinAction === 'reset') {
+      card.visit_count = 0; card.card_completed = false;
+      showToast("New card started");
+    } else {
+      card.visit_count = data.new_count; card.card_completed = data.card_completed;
+      showToast(data.reward_unlocked ? "🎉 " + data.reward_unlocked + " unlocked!" : "Visit confirmed!");
     }
+    renderCard();
   }
 
-  /* ---------- wire up ---------- */
-  $('pinInput').addEventListener('keydown', e => { if (e.key === 'Enter') submitPin(); });
-  $('otpInput').addEventListener('keydown', e => { if (e.key === 'Enter') verifyOtp(); });
-  window.addEventListener('DOMContentLoaded', boot);
+  window.addEventListener('DOMContentLoaded', () => {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) {
+      const {phone, name} = JSON.parse(saved);
+      loadCard(phone, name);
+    } else {
+      document.getElementById('phoneState').style.display = 'flex';
+    }
+  });
 </script>
 </body>
 </html>
